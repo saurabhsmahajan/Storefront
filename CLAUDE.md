@@ -1,0 +1,1 @@
+Run the formatter (npx prettier --write) after every file edit.
