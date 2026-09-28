@@ -1,4 +1,4 @@
 evidence/
-supabase/
+supabase/.temp/
 node_modules/
 package-lock.json
