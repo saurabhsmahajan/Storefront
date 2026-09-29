@@ -8,8 +8,21 @@ type Product = {
   currency: string;
 };
 
+type CartItem = {
+  id: string;
+  quantity: number;
+  // null when the product is no longer visible (e.g. deactivated, so RLS hides it).
+  products: Pick<Product, "name" | "price_minor" | "currency"> | null;
+};
+
 const statusEl = document.querySelector<HTMLParagraphElement>("#status")!;
 const listEl = document.querySelector<HTMLUListElement>("#products")!;
+const cartStatusEl =
+  document.querySelector<HTMLParagraphElement>("#cart-status")!;
+const cartListEl = document.querySelector<HTMLUListElement>("#cart")!;
+
+let userId: string | null = null;
+let cartId: string | null = null;
 
 // Converts integer minor units to a display string, using the currency's own
 // number of decimal places (e.g. 2 for USD, 0 for JPY).
@@ -22,19 +35,23 @@ function formatPrice(minor: number, currency: string): string {
   return formatter.format(minor / 10 ** digits);
 }
 
-async function ensureSession(): Promise<void> {
+async function ensureSession(): Promise<string> {
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     throw new Error(`[auth] getSession failed: ${error.message}`);
   }
   if (data.session) {
-    return;
+    return data.session.user.id;
   }
 
-  const { error: signInError } = await supabase.auth.signInAnonymously();
-  if (signInError) {
-    throw new Error(`[auth] signInAnonymously failed: ${signInError.message}`);
+  const { data: signInData, error: signInError } =
+    await supabase.auth.signInAnonymously();
+  if (signInError || !signInData.user) {
+    throw new Error(
+      `[auth] signInAnonymously failed: ${signInError?.message ?? "no user returned"}`,
+    );
   }
+  return signInData.user.id;
 }
 
 async function loadProducts(): Promise<Product[]> {
@@ -47,6 +64,94 @@ async function loadProducts(): Promise<Product[]> {
   return data ?? [];
 }
 
+// Returns the current user's existing cart id, or null if they have none yet.
+async function findCart(): Promise<string | null> {
+  if (cartId) {
+    return cartId;
+  }
+  if (!userId) {
+    throw new Error("[cart] no session");
+  }
+
+  const { data: existing, error: selectError } = await supabase
+    .from("carts")
+    .select("id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (selectError) {
+    throw new Error(`[cart] lookup failed: ${selectError.message}`);
+  }
+  if (existing) {
+    cartId = existing.id as string;
+  }
+  return cartId;
+}
+
+// Returns the current user's cart id, creating a cart on first use.
+async function ensureCart(): Promise<string> {
+  const existing = await findCart();
+  if (existing) {
+    return existing;
+  }
+
+  const { data: created, error: insertError } = await supabase
+    .from("carts")
+    .insert({ user_id: userId })
+    .select("id")
+    .single();
+  if (insertError) {
+    throw new Error(`[cart] create failed: ${insertError.message}`);
+  }
+  cartId = created.id as string;
+  return cartId;
+}
+
+async function addToCart(productId: string): Promise<void> {
+  const cart = await ensureCart();
+
+  const { data: existing, error: selectError } = await supabase
+    .from("cart_items")
+    .select("quantity")
+    .eq("cart_id", cart)
+    .eq("product_id", productId)
+    .maybeSingle();
+  if (selectError) {
+    throw new Error(`[cart_items] lookup failed: ${selectError.message}`);
+  }
+
+  const quantity = ((existing?.quantity as number | undefined) ?? 0) + 1;
+  const { error: upsertError } = await supabase.from("cart_items").upsert(
+    {
+      cart_id: cart,
+      product_id: productId,
+      quantity,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "cart_id,product_id" },
+  );
+  if (upsertError) {
+    throw new Error(`[cart_items] upsert failed: ${upsertError.message}`);
+  }
+}
+
+async function loadCartItems(): Promise<CartItem[]> {
+  const cart = await findCart();
+  if (!cart) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from("cart_items")
+    .select("id, quantity, products(name, price_minor, currency)")
+    .eq("cart_id", cart)
+    .order("created_at", { ascending: true });
+  if (error) {
+    throw new Error(`[cart_items] query failed: ${error.message}`);
+  }
+  return (data ?? []) as unknown as CartItem[];
+}
+
 function renderProducts(products: Product[]): void {
   listEl.replaceChildren();
   if (products.length === 0) {
@@ -56,19 +161,74 @@ function renderProducts(products: Product[]): void {
 
   for (const product of products) {
     const item = document.createElement("li");
-    item.textContent = `${product.name} — ${formatPrice(product.price_minor, product.currency)}`;
+    item.textContent = `${product.name} — ${formatPrice(product.price_minor, product.currency)} `;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Add to cart";
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await addToCart(product.id);
+        await refreshCart();
+      } catch (err) {
+        console.error(err);
+        cartStatusEl.textContent =
+          "Could not add to cart. See console for details.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    item.append(button);
     listEl.append(item);
   }
   statusEl.textContent = "";
 }
 
+function renderCart(items: CartItem[]): void {
+  cartListEl.replaceChildren();
+  if (items.length === 0) {
+    cartStatusEl.textContent = "Your cart is empty.";
+    return;
+  }
+
+  for (const cartItem of items) {
+    const item = document.createElement("li");
+    const product = cartItem.products;
+    if (product) {
+      const lineTotal = formatPrice(
+        product.price_minor * cartItem.quantity,
+        product.currency,
+      );
+      item.textContent = `${product.name} × ${cartItem.quantity} — ${lineTotal}`;
+    } else {
+      item.textContent = `Unavailable product × ${cartItem.quantity}`;
+    }
+    cartListEl.append(item);
+  }
+  cartStatusEl.textContent = "";
+}
+
+async function refreshCart(): Promise<void> {
+  renderCart(await loadCartItems());
+}
+
 async function main(): Promise<void> {
   try {
-    await ensureSession();
+    userId = await ensureSession();
     renderProducts(await loadProducts());
   } catch (err) {
     console.error(err);
     statusEl.textContent = "Could not load products. See console for details.";
+    return;
+  }
+
+  try {
+    await refreshCart();
+  } catch (err) {
+    console.error(err);
+    cartStatusEl.textContent = "Could not load cart. See console for details.";
   }
 }
 
