@@ -10,3 +10,5 @@ and log a row for each edit where the check fails.
 | 2026-09-28 | supabase/migrations/20260928134509_init_schema.sql (update 2) | n/a — no SQL parser | yes (ran, errored) |
 | 2026-09-29 | frontend/src/supabaseClient.ts | pass | yes |
 | 2026-09-29 | frontend/src/main.ts | pass | yes |
+| 2026-09-30 | supabase/functions/create-checkout-session/index.ts | pass | yes |
+| 2026-09-30 | supabase/functions/create-checkout-session/deno.json | pass | yes |
