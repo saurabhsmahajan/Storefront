@@ -12,3 +12,6 @@ and log a row for each edit where the check fails.
 | 2026-09-29 | frontend/src/main.ts | pass | yes |
 | 2026-09-30 | supabase/functions/create-checkout-session/index.ts | pass | yes |
 | 2026-09-30 | supabase/functions/create-checkout-session/deno.json | pass | yes |
+| 2026-09-30 | frontend/index.html (Adyen checkout button + dropin div) | pass | yes |
+| 2026-09-30 | frontend/src/main.ts (Adyen Drop-in integration) | pass | yes |
+| 2026-09-30 | frontend/package.json (added @adyen/adyen-web) | pass | yes |

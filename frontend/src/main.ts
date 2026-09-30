@@ -1,3 +1,6 @@
+import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
+import "@adyen/adyen-web/styles/adyen.css";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient.ts";
 
 type Product = {
@@ -20,6 +23,11 @@ const listEl = document.querySelector<HTMLUListElement>("#products")!;
 const cartStatusEl =
   document.querySelector<HTMLParagraphElement>("#cart-status")!;
 const cartListEl = document.querySelector<HTMLUListElement>("#cart")!;
+const checkoutButton =
+  document.querySelector<HTMLButtonElement>("#checkout-button")!;
+const checkoutStatusEl =
+  document.querySelector<HTMLParagraphElement>("#checkout-status")!;
+const dropinEl = document.querySelector<HTMLDivElement>("#dropin")!;
 
 let userId: string | null = null;
 let cartId: string | null = null;
@@ -214,6 +222,91 @@ async function refreshCart(): Promise<void> {
   renderCart(await loadCartItems());
 }
 
+type CheckoutSessionResponse = {
+  orderId: string;
+  session: { id: string; sessionData: string };
+};
+
+async function createCheckoutSession(
+  cart: string,
+): Promise<CheckoutSessionResponse> {
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
+  if (sessionError || !sessionData.session) {
+    throw new Error(
+      `[checkout] no active session: ${sessionError?.message ?? "not signed in"}`,
+    );
+  }
+
+  const { data, error } =
+    await supabase.functions.invoke<CheckoutSessionResponse>(
+      "create-checkout-session",
+      {
+        body: { cartId: cart },
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      },
+    );
+  if (error) {
+    // The function returns { error: "..." } with a non-2xx status; surface that message.
+    let message = error.message;
+    if (error instanceof FunctionsHttpError) {
+      const body = await error.context.json().catch(() => null);
+      message = `${error.context.status} ${body?.error ?? message}`;
+    }
+    throw new Error(`[checkout] create-checkout-session failed: ${message}`);
+  }
+  if (!data?.orderId || !data.session?.id || !data.session.sessionData) {
+    throw new Error(
+      "[checkout] unexpected response from create-checkout-session",
+    );
+  }
+  return data;
+}
+
+async function startCheckout(): Promise<void> {
+  const clientKey = import.meta.env.VITE_ADYEN_CLIENT_KEY as string | undefined;
+  if (!clientKey) {
+    throw new Error(
+      "[checkout] Missing VITE_ADYEN_CLIENT_KEY. Check frontend/.env.",
+    );
+  }
+
+  const cart = await findCart();
+  if (!cart) {
+    checkoutStatusEl.textContent = "Your cart is empty.";
+    return;
+  }
+
+  checkoutStatusEl.textContent = "Starting checkout…";
+  const { orderId, session } = await createCheckoutSession(cart);
+
+  const checkout = await AdyenCheckout({
+    environment: "test",
+    clientKey,
+    session,
+    // Only log and show status here; order state is updated by the webhook later.
+    onPaymentCompleted: (result) => {
+      console.log("[checkout] payment completed", { orderId, result });
+      checkoutStatusEl.textContent = `Payment result: ${result.resultCode}`;
+    },
+    onPaymentFailed: (result) => {
+      console.error("[checkout] payment failed", { orderId, result });
+      checkoutStatusEl.textContent = `Payment failed: ${result?.resultCode ?? "unknown"}`;
+    },
+    onError: (error) => {
+      console.error("[checkout] Adyen error", { orderId, error });
+      checkoutStatusEl.textContent = "Payment error. See console for details.";
+    },
+  });
+
+  dropinEl.replaceChildren();
+  dropinEl.hidden = false;
+  new Dropin(checkout).mount(dropinEl);
+  checkoutStatusEl.textContent = "";
+}
+
 async function main(): Promise<void> {
   try {
     userId = await ensureSession();
@@ -230,6 +323,19 @@ async function main(): Promise<void> {
     console.error(err);
     cartStatusEl.textContent = "Could not load cart. See console for details.";
   }
+
+  checkoutButton.addEventListener("click", async () => {
+    checkoutButton.disabled = true;
+    try {
+      await startCheckout();
+    } catch (err) {
+      console.error(err);
+      checkoutStatusEl.textContent =
+        "Could not start checkout. See console for details.";
+    } finally {
+      checkoutButton.disabled = false;
+    }
+  });
 }
 
 main();
