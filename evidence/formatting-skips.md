@@ -15,3 +15,7 @@ and log a row for each edit where the check fails.
 | 2026-09-30 | frontend/index.html (Adyen checkout button + dropin div) | pass | yes |
 | 2026-09-30 | frontend/src/main.ts (Adyen Drop-in integration) | pass | yes |
 | 2026-09-30 | frontend/package.json (added @adyen/adyen-web) | pass | yes |
+| 2026-09-30 | frontend/src/main.ts (added countryCode to Adyen config) | pass | yes |
+| 2026-09-30 | frontend/src/main.ts (registered Card component in Dropin config) | pass | yes |
+evidence/adyen-checkout-declined.png    — the "Payment failed: Refused" screen + console log
+evidence/adyen-dashboard-refused.png    — the Adyen dashboard entry for this order, showing Refused status
