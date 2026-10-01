@@ -1,4 +1,5 @@
-import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
+// Storefront entry point: product listing, cart, and Adyen checkout flow.
+import { AdyenCheckout, Card, Dropin } from "@adyen/adyen-web";
 import "@adyen/adyen-web/styles/adyen.css";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient.ts";
@@ -285,6 +286,7 @@ async function startCheckout(): Promise<void> {
   const checkout = await AdyenCheckout({
     environment: "test",
     clientKey,
+    countryCode: "IN",
     session,
     // Only log and show status here; order state is updated by the webhook later.
     onPaymentCompleted: (result) => {
@@ -303,7 +305,8 @@ async function startCheckout(): Promise<void> {
 
   dropinEl.replaceChildren();
   dropinEl.hidden = false;
-  new Dropin(checkout).mount(dropinEl);
+  // Adyen Web v6 only bundles the payment method components passed here.
+  new Dropin(checkout, { paymentMethodComponents: [Card] }).mount(dropinEl);
   checkoutStatusEl.textContent = "";
 }
 
