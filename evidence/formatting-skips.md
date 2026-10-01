@@ -10,6 +10,8 @@ and log a row for each edit where the check fails.
 | 2026-09-28 | supabase/migrations/20260928134509_init_schema.sql (update 2) | n/a — no SQL parser | yes (ran, errored) |
 | 2026-09-29 | frontend/src/supabaseClient.ts | pass | yes |
 | 2026-09-29 | frontend/src/main.ts | pass | yes |
+| 2026-09-29 | frontend/index.html (cart view elements) | pass | yes |
+| 2026-09-29 | frontend/src/main.ts (cart feature) | pass | yes |
 | 2026-09-30 | supabase/functions/create-checkout-session/index.ts | pass | yes |
 | 2026-09-30 | supabase/functions/create-checkout-session/deno.json | pass | yes |
 | 2026-09-30 | frontend/index.html (Adyen checkout button + dropin div) | pass | yes |
@@ -17,5 +19,5 @@ and log a row for each edit where the check fails.
 | 2026-09-30 | frontend/package.json (added @adyen/adyen-web) | pass | yes |
 | 2026-09-30 | frontend/src/main.ts (added countryCode to Adyen config) | pass | yes |
 | 2026-09-30 | frontend/src/main.ts (registered Card component in Dropin config) | pass | yes |
-evidence/adyen-checkout-declined.png    — the "Payment failed: Refused" screen + console log
-evidence/adyen-dashboard-refused.png    — the Adyen dashboard entry for this order, showing Refused status
+| 2026-09-30 | supabase/functions/adyen-webhook/index.ts | pass | yes |
+| 2026-09-30 | supabase/functions/adyen-webhook/deno.json | pass | yes |
