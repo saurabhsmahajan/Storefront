@@ -21,3 +21,4 @@ and log a row for each edit where the check fails.
 | 2026-09-30 | frontend/src/main.ts (registered Card component in Dropin config) | pass | yes |
 | 2026-09-30 | supabase/functions/adyen-webhook/index.ts | pass | yes |
 | 2026-09-30 | supabase/functions/adyen-webhook/deno.json | pass | yes |
+| 2026-10-01 | .claude/hooks/format-on-edit.mjs | pass | yes |

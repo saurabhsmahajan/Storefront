@@ -23,3 +23,6 @@
   time, but the database had no record of that outcome until this webhook
   arrived — demonstrating why orders.status must only change from a
   verified server-to-server event, never from what the client reports.
+
+evidence/adyen-checkout-declined.png    — the "Payment failed: Refused" screen + console log
+evidence/adyen-dashboard-refused.png    — the Adyen dashboard entry for this order, showing Refused status
