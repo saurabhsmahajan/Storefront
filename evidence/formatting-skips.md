@@ -67,3 +67,13 @@ Not shown: the shell's working directory at the moment the hook fired.
    that prettier --check did not reveal, because the output was already
    formatted. Hook runs were verified from the session transcript, not the
    terminal. Both Edit and Write tools were exercised.
+
+      ## Hook scope decision (2026-10-04)
+
+   Week 1 step G asks for a hook that runs format, lint and tests after
+   every edit. The hook installed here (.claude/hooks/format-on-edit.mjs)
+   runs Prettier only. Decision: keep it scoped to formatting for now,
+   because the project has no lint or test scripts configured (root
+   package.json has only npm's placeholder "test" script).
+   Lint and tests will be added when the Week 2 agent code gives them
+   something worth running. Until then, step G is met for formatting only.
