@@ -40,6 +40,9 @@ the `format-on-edit:` line appeared in the output.
 | 2026-10-04 | frontend/src/main.ts (afterCountTestEdit7 function added) | pass | yes |
 | 2026-10-04 | frontend/index.html (section added, edit 8) | pass | NO: hook failed, MODULE_NOT_FOUND (relative path resolved from frontend/) |
 | 2026-10-04 | frontend/index.html (p element added after cd frontend, edit 9) | pass | yes, after the $CLAUDE_PROJECT_DIR path fix |
+| 2026-10-04 | supabase/functions/adyen-webhook/index.ts (afterCountTestEdit10 added) | pass | yes |
+| 2026-10-04 | supabase/functions/create-checkout-session/index.ts (afterCountTestEdit11 added after cd supabase) | pass | yes |
+| 2026-10-04 | frontend/src/afterCountTest12.ts (new file: Write, then Edit) | pass | yes (both PostToolUse:Write and PostToolUse:Edit) |
 
 Finding (2026-10-04): the PostToolUse hook used a relative path
 (node .claude/hooks/format-on-edit.mjs). With Claude's shell inside
@@ -50,3 +53,17 @@ the failure was silent. Fixed by using "$CLAUDE_PROJECT_DIR" in the
 command. Verified by a hook_success entry for an edit made after Claude
 ran `cd frontend` (PowerShell call recorded in the session transcript).
 Not shown: the shell's working directory at the moment the hook fired.
+
+   ## Summary (2026-10-04)
+
+   | Phase | Dates | Edits | Prettier failures | Hook ran |
+   |---|---|---|---|---|
+   | Before: CLAUDE.md rule only, no hook | 2026-09-28 to 2026-10-01 | 16 (14 checked, 2 SQL n/a) | 0 | n/a |
+   | After: hook on | 2026-10-04 | 12 | 0 | 11 of 12 (edit 8 failed, path bug, fixed) |
+
+   Reading: rule compliance held in both phases, so the hook did not reduce
+   skips from a nonzero baseline. What the hook adds is enforcement by code.
+   The after phase also found a silent hook failure (relative path, edit 8)
+   that prettier --check did not reveal, because the output was already
+   formatted. Hook runs were verified from the session transcript, not the
+   terminal. Both Edit and Write tools were exercised.
