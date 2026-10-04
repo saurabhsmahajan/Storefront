@@ -1,25 +1,24 @@
 {
-    "permissions": {
-        "deny": [
-            "Read(.env)",
-            "Read(frontend/.env)",
-            "Edit(supabase/migrations/**)",
-            "Write(supabase/migrations/**)",
-            "Bash(cat .env*)",
-            "Bash(cat frontend/.env*)"
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(frontend/.env)",
+      "Edit(supabase/migrations/**)",
+      "Write(supabase/migrations/**)",
+      "Read(evidence/decoy-secret.txt)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/format-on-edit.mjs"
+          }
         ]
-    },
-    "hooks": {
-        "PostToolUse": [
-            {
-                "matcher": "Edit|Write",
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": "node .claude/hooks/format-on-edit.mjs"
-                    }
-                ]
-            }
-        ]
-    }
+      }
+    ]
+  }
 }
