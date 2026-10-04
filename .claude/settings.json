@@ -2,7 +2,11 @@
     "permissions": {
         "deny": [
             "Read(.env)",
-            "Read(frontend/.env)"
+            "Read(frontend/.env)",
+            "Edit(supabase/migrations/**)",
+            "Write(supabase/migrations/**)",
+            "Bash(cat .env*)",
+            "Bash(cat frontend/.env*)"
         ]
     },
     "hooks": {
