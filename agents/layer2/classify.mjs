@@ -2,11 +2,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { MODEL } from "../config.mjs";
 
 export const INTENTS = [
-    "order_status",
-    "decline",
-    "refund",
-    "human_request",
-    "out_of_scope",
+  "order_status",
+  "decline",
+  "refund",
+  "human_request",
+  "out_of_scope",
 ];
 
 const SYSTEM = `You classify customer support messages for an online shop.
@@ -21,22 +21,22 @@ const SYSTEM = `You classify customer support messages for an online shop.
 const client = new Anthropic();
 
 export async function classifyIntent(message) {
-    const res = await client.messages.create({
-        model: MODEL,
-        max_tokens: 1024,
-        system: SYSTEM,
-        messages: [{ role: "user", content: message }],
-    });
-    const raw = res.content
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("")
-        .trim()
-        .toLowerCase();
-    return {
-        intent: INTENTS.includes(raw) ? raw : null,
-        raw,
-        stop: res.stop_reason,
-        types: res.content.map((b) => b.type),
-    };
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    system: SYSTEM,
+    messages: [{ role: "user", content: message }],
+  });
+  const raw = res.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim()
+    .toLowerCase();
+  return {
+    intent: INTENTS.includes(raw) ? raw : null,
+    raw,
+    stop: res.stop_reason,
+    types: res.content.map((b) => b.type),
+  };
 }
