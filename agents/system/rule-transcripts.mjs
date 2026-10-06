@@ -109,7 +109,10 @@ const out = [
 ];
 
 for (const c of cases) {
-  const r = await handleMessage(c.message, c.deps);
+  const r = await handleMessage(c.message, {
+    plan: async () => ({ plan: null }),
+    ...c.deps,
+  });
   const errors = (r.steps ?? [])
     .flatMap((s) => s.results ?? [])
     .filter((x) => x.is_error).length;
@@ -143,7 +146,7 @@ for (const c of cases) {
 const file = path.join(
   root,
   "evidence",
-  `escalation-failure-transcripts-${date}.md`,
+  `escalation-failure-transcripts-run-${date}.md`,
 );
 fs.writeFileSync(file, out.join("\n"));
 console.log(`Saved ${file}`);

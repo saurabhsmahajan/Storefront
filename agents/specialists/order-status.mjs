@@ -11,7 +11,7 @@ const SYSTEM = fs
 const FULL_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// The allowlist: this specialist can call these two tools and nothing else.
+// The allowlist: this specialist can call this one tool and nothing else.
 const TOOLS = [
   {
     name: "get_order_status",
@@ -31,6 +31,7 @@ const TOOLS = [
 ];
 
 export async function runOrderStatus(message) {
+  let lookup = null; // last lookup, kept in code for the handoff findings
   const execute = async (name, input) => {
     if (name !== "get_order_status") throw new Error(`Unknown tool: ${name}`);
     const id = input?.order_id;
@@ -38,20 +39,26 @@ export async function runOrderStatus(message) {
       throw new Error("order_id must be a full UUID");
     }
     const o = await getOrder(id, "order_status");
-    if (!o) return { found: false };
-    return {
+    if (!o) {
+      lookup = { order_id: id, found: false };
+      return { found: false };
+    }
+    const out = {
       found: true,
       status: o.status,
       total: `${(o.total_minor / 100).toFixed(2)} ${o.currency}`,
       order_date: o.created_at.slice(0, 10),
       age_days: Math.floor((Date.now() - new Date(o.created_at)) / 86400000),
     };
+    lookup = { order_id: id, ...out };
+    return out;
   };
-  return runLoop({
+  const r = await runLoop({
     system: SYSTEM,
     tools: TOOLS,
     execute,
     message,
     maxSteps: 4,
   });
+  return { ...r, lookup };
 }
