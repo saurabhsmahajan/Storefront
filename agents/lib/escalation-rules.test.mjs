@@ -132,3 +132,39 @@ test("every escalation carries a known trigger, for every input combination", ()
     }
   }
 });
+test("decideEscalation never returns routed_subtask, for every input combination", () => {
+  const routes = [
+    "order_status",
+    "decline",
+    "refund",
+    "human_request",
+    "out_of_scope",
+    "unknown",
+    "router_error",
+    undefined,
+  ];
+  const forced = [
+    undefined,
+    "step_cap",
+    "api_error: x",
+    "empty_final_reply",
+    "unexpected_stop_reason: y",
+    "specialist_error: z",
+    "other",
+  ];
+  const verdicts = [null, "eligible", "not_eligible", "no_rule", "not_found"];
+  for (const route of routes) {
+    for (const forcedReason of forced) {
+      for (const toolErrors of [0, 1, 2, 3]) {
+        for (const verdict of verdicts) {
+          const r = decideEscalation({
+            route,
+            loop: { forcedReason, toolErrors },
+            refundDecision: verdict ? v(verdict) : null,
+          });
+          assert.notEqual(r.trigger, "routed_subtask");
+        }
+      }
+    }
+  }
+});

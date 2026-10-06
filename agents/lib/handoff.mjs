@@ -14,6 +14,7 @@ export const TRIGGERS = [
   "specialist_error",
   "empty_reply",
   "unexpected_stop",
+  "routed_subtask",
 ];
 const DESTINATIONS = ["human", "order_status", "decline", "refund"];
 const SOURCES = ["router", "order_status", "decline", "refund", "system"];
@@ -80,5 +81,49 @@ export function validateHandoff(p) {
   if (p?.authorization?.approved_by !== null) {
     errors.push("authorization.approved_by must be null");
   }
+  if (p?.trigger === "routed_subtask") {
+    if (!Array.isArray(p.findings) || p.findings.length !== 0) {
+      errors.push("routed_subtask findings must be empty");
+    }
+    if (p.to === "human") errors.push("routed_subtask cannot go to human");
+    const size = p.context?.plan_size;
+    if (!Number.isInteger(size) || size < 1) {
+      errors.push(
+        "routed_subtask context.plan_size must be a positive integer",
+      );
+    }
+  }
   return { ok: errors.length === 0, errors };
+}
+
+// Router to specialist. The Router holds no data, so there are no findings.
+// customer_message is the subtask's question, a verbatim span of the message.
+export function buildSubtaskHandoff({
+  subtask,
+  orderId = null,
+  classification,
+  planSize,
+  now,
+}) {
+  return buildHandoff({
+    from: "router",
+    to: subtask.specialist,
+    trigger: "routed_subtask",
+    customerMessage: subtask.question,
+    orderId,
+    findings: [],
+    context: { classification, subtask_id: subtask.id, plan_size: planSize },
+    now,
+  });
+}
+
+// The only string a specialist receives. A single-subtask package passes the
+// message through unchanged. A split question may have lost the order ID, so
+// code adds the ID it found unless the question already contains it.
+export function renderForSpecialist(pkg) {
+  const text = pkg.customer_message;
+  if (pkg.context?.plan_size === 1) return text;
+  const id = pkg.order_id;
+  if (!id || text.toLowerCase().includes(id.toLowerCase())) return text;
+  return `${text}\nOrder ID: ${id}`;
 }
