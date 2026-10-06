@@ -123,17 +123,45 @@ test("a split question without the order ID gets an Order ID line", () => {
     `can I get a refund?\nOrder ID: ${ORD_103}`,
   );
 });
-test("no Order ID line when the question already has the ID, any case", () => {
+test("Order ID line even when the question already has the ID, any case", () => {
   for (const q of [
     `Where is order ${ORD_103}`,
     `Where is order ${ORD_103.toUpperCase()}`,
   ]) {
-    assert.equal(renderForSpecialist(routed({ question: q })), q);
+    assert.equal(
+      renderForSpecialist(routed({ question: q })),
+      `${q}\nOrder ID: ${ORD_103}`,
+    );
   }
 });
 test("no Order ID line when there is no order ID", () => {
   const p = routed({ question: "can I get a refund?" }, 2, null);
   assert.equal(renderForSpecialist(p), "can I get a refund?");
+});
+test("split question naming the ID in lower or upper case still gets the line", () => {
+  const lower = `refund ${ORD_103.toLowerCase()} please`;
+  const upper = `refund ${ORD_103.toUpperCase()} please`;
+  for (const planSize of [2, 3]) {
+    assert.equal(
+      renderForSpecialist(routed({ question: lower }, planSize)),
+      `${lower}\nOrder ID: ${ORD_103}`,
+    );
+    assert.equal(
+      renderForSpecialist(routed({ question: upper }, planSize)),
+      `${upper}\nOrder ID: ${ORD_103}`,
+    );
+  }
+});
+test("split package with no order_id is returned unchanged, even if it names an ID", () => {
+  for (const q of [
+    "can I get a refund?",
+    `Where is order ${ORD_103}`,
+    "  odd\tspacing  \n",
+  ]) {
+    const p = routed({ question: q }, 3, null);
+    assert.equal(p.order_id, null);
+    assert.equal(renderForSpecialist(p), q);
+  }
 });
 test("validation rejects a routed package with findings", () => {
   const p = structuredClone(routed({ question: "Where is order" }));

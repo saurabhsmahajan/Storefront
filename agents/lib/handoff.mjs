@@ -118,12 +118,13 @@ export function buildSubtaskHandoff({
 }
 
 // The only string a specialist receives. A single-subtask package passes the
-// message through unchanged. A split question may have lost the order ID, so
-// code adds the ID it found unless the question already contains it.
+// message through unchanged. A split question always gets the order ID code
+// assigned to it on its own line, even if the question already names an ID,
+// so the specialist is told which order this subtask is about.
 export function renderForSpecialist(pkg) {
   const text = pkg.customer_message;
   if (pkg.context?.plan_size === 1) return text;
   const id = pkg.order_id;
-  if (!id || text.toLowerCase().includes(id.toLowerCase())) return text;
+  if (!id) return text;
   return `${text}\nOrder ID: ${id}`;
 }

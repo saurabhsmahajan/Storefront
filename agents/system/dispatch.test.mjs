@@ -234,7 +234,7 @@ test("4. planner throws, or plans an unknown specialist: single path", async () 
   );
 });
 
-test("5. mixed #15: sub-questions, Order ID line only when missing, parallel", async () => {
+test("5. mixed #15: sub-questions, each with its Order ID line, parallel", async () => {
   const { specialists, calls } = makeSpecialists({
     decline: { delay: 200, reply: "Declined: check your funds." },
     refund: { delay: 200, reply: "Nothing was charged, so no refund." },
@@ -244,7 +244,9 @@ test("5. mixed #15: sub-questions, Order ID line only when missing, parallel", a
     plan: planOf(PLAN_15),
     specialists,
   });
-  assert.deepEqual(calls.decline, [`Why was I declined on ${ORD_105}`]);
+  assert.deepEqual(calls.decline, [
+    `Why was I declined on ${ORD_105}\nOrder ID: ${ORD_105}`,
+  ]);
   assert.deepEqual(calls.refund, [`can I get a refund?\nOrder ID: ${ORD_105}`]);
   assert.ok(r.ms < 380, `ms ${r.ms}`);
   assert.equal(
@@ -578,6 +580,42 @@ test("17. single intent, two order IDs: raw message, package uses the first ID",
   assert.equal(r.outcome, "escalated");
   assert.equal(r.escalation.trigger, "refund_recommendation");
   assert.equal(r.handoff.order_id, ORD_103);
+});
+
+test("18. two-order split: each specialist gets its own order's line only", async () => {
+  const ORD_104 = "5eed0000-0000-4000-8000-000000000104";
+  const msg = `Where is order ${ORD_103}, and can I get a refund on ${ORD_104}?`;
+  const { specialists, calls } = makeSpecialists();
+  const r = await run(msg, {
+    classify: classifyAs("order_status"),
+    plan: planOf({
+      subtasks: [
+        {
+          id: "s1",
+          specialist: "order_status",
+          question: `Where is order ${ORD_103}`,
+          order_ref: 0,
+        },
+        {
+          id: "s2",
+          specialist: "refund",
+          question: `can I get a refund on ${ORD_104}?`,
+          order_ref: 1,
+        },
+      ],
+      unrouted: [],
+    }),
+    specialists,
+  });
+  assert.deepEqual(calls.order_status, [
+    `Where is order ${ORD_103}\nOrder ID: ${ORD_103}`,
+  ]);
+  assert.deepEqual(calls.refund, [
+    `can I get a refund on ${ORD_104}?\nOrder ID: ${ORD_104}`,
+  ]);
+  assert.ok(!calls.order_status[0].includes(ORD_104));
+  assert.ok(!calls.refund[0].includes(ORD_103));
+  assert.equal(r.route, "multi:order_status+refund");
 });
 
 // Runs last: node:test runs top-level tests in file order.
