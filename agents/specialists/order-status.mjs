@@ -28,18 +28,6 @@ const TOOLS = [
       required: ["order_id"],
     },
   },
-  {
-    name: "escalate_to_human",
-    description:
-      "Hand the conversation to a human agent. Use only when the customer asks to speak to a human.",
-    input_schema: {
-      type: "object",
-      properties: {
-        reason: { type: "string", description: "Short reason for the handoff" },
-      },
-      required: ["reason"],
-    },
-  },
 ];
 
 export async function runOrderStatus(message) {

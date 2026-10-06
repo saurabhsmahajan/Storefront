@@ -29,18 +29,6 @@ const TOOLS = [
       required: ["order_id"],
     },
   },
-  {
-    name: "escalate_to_human",
-    description:
-      "Hand the conversation to a human agent, with the findings in the reason.",
-    input_schema: {
-      type: "object",
-      properties: {
-        reason: { type: "string", description: "Findings and recommendation" },
-      },
-      required: ["reason"],
-    },
-  },
 ];
 
 export async function runRefund(message) {

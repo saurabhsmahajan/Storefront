@@ -8,7 +8,8 @@ export const FALLBACK_REPLY =
 
 // Generic hand-written loop. Each specialist supplies its own system prompt,
 // tool list (the allowlist) and execute function. Every exit returns
-// "resolved" or "escalated".
+// "resolved" or "escalated". The result also reports toolErrors and
+// forcedReason, which the escalation rules take as input.
 export async function runLoop({
   system,
   tools,
@@ -21,15 +22,20 @@ export async function runLoop({
   const messages = [{ role: "user", content: message }];
   const steps = [];
   let escalation = null;
+  let toolErrors = 0;
+  let forcedReason = null;
 
   const finish = (outcome, reply, extra = {}) => ({
     outcome,
     reply,
     steps,
     escalation,
+    toolErrors,
+    forcedReason,
     ...extra,
   });
   const forceEscalate = (reason) => {
+    forcedReason = reason;
     escalation = escalation ?? { reason, by: "code" };
     return finish("escalated", FALLBACK_REPLY, { forced: true });
   };
@@ -73,6 +79,7 @@ export async function runLoop({
       const results = [];
       for (const block of toolCalls) {
         if (!allowed.has(block.name)) {
+          toolErrors++;
           (log.violations ??= []).push(block.name);
           results.push({
             type: "tool_result",
@@ -102,6 +109,7 @@ export async function runLoop({
             content: JSON.stringify(out),
           });
         } catch (err) {
+          toolErrors++;
           results.push({
             type: "tool_result",
             tool_use_id: block.id,

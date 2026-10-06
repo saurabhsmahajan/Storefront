@@ -34,18 +34,6 @@ const TOOLS = [
       required: ["order_id"],
     },
   },
-  {
-    name: "escalate_to_human",
-    description:
-      "Hand the conversation to a human agent. Use when the customer asks for a human or you cannot resolve the case.",
-    input_schema: {
-      type: "object",
-      properties: {
-        reason: { type: "string", description: "Short reason for the handoff" },
-      },
-      required: ["reason"],
-    },
-  },
 ];
 
 // Applies the approved disclosure rule in code. The model never sees a raw
