@@ -101,3 +101,135 @@
    - Seeded events share one timestamp and one customer owns every order, so
      timing statements and "someone else's order" cases are not tested.
    - Layers 1 and 2 were not timed.
+
+      ## Addendum: end-to-end system (Router and three specialists)
+
+   Added after Step F. Sources: evidence/system-run-2026-10-06.md,
+   evidence/system-scores-2026-10-06.md. The earlier layers are not re-scored.
+
+   System: classifier Router, then one specialist (order_status, decline,
+   refund), each with its own prompt, tool allowlist and credential.
+   human_request and out_of_scope are handled in code. Any unexpected failure
+   escalates to a human.
+
+   ### Totals
+
+   | | Correct | Invented | Escalation right | Total time |
+   |---|---|---|---|---|
+   | Layer 1 | 5 of 21 | 2 | 18 of 21 | not timed |
+   | Layer 2 | 16 of 21 | 0 | 18 of 21 | not timed |
+   | Layer 3 | 18 of 21 | 0 | 19 of 21 | 118.2 s |
+   | System | 16 of 21 | 0 | 21 of 21 | 120.6 s |
+
+   The system's 16 counts #7 to #10 against the revised expectations
+   (evidence/decline-disclosure-decision-2026-10-06.md). Against the original
+   expected column it scores 15: only #7 differs, because the original expects
+   the reasons to be named and the revised rule forbids it. #8, #9 and #10 meet
+   both.
+
+   ### Where the system differs from Layer 3
+
+   | # | Layer 3 | System | Why |
+   |---|---|---|---|
+   | 2 | N/N/N | N/N/Y | Layer 3 escalated when it did not need to. The system answers with the status and offers a human. |
+   | 3 | Y/N/Y | N/N/Y | The Order Status credential cannot read payment events: no failed attempts, no "nothing charged". |
+   | 4 | Y/N/Y | N/N/Y | Same cause: no authorisation state. |
+   | 9 | N/N/Y | Y/N/Y | The Decline Explainer never receives a raw reason, so it cannot reveal "FRAUD". |
+   | 10 | N/N/Y | Y/N/Y | Same: "Acquirer Fraud" is replaced by approved text in code. |
+   | 15 | Y/N/Y | N/N/Y | One label sends the message to one specialist, so one half is lost. |
+   | 16 | Y/N/N | N/N/Y | Same cause. The refund half was answered and escalated. |
+
+   Net: +2 (#9, #10) and -4 (#3, #4, #15, #16), so 18 becomes 16. All other
+   messages score the same in both.
+
+   ### Reading
+
+   - Splitting the agent costs correctness where one answer needs both tables
+     (#3, #4) or both specialists (#15, #16). Those four are the price of the
+     smaller blast radius and the single-label Router. Step H addresses #15 and
+     #16.
+   - It wins where the failure was a policy decision a prompt could not hold:
+     the fraud-reason leak (#9, #10) is now closed by code, not by wording.
+   - #17 is the strongest answer of any layer: policy gap recognised,
+     authorisation state in the handoff, nothing promised.
+   - Escalation is right on all 21, the first clean result. Code decides
+     human_request and every failure fallback. The model still decides whether
+     to escalate #11, #16 and #17 (finding S7). No session needed a forced
+     escalation in this run.
+   - Open findings carried into step G: dead-end referrals (S1), fact flags
+     shown to the customer (S4), a reply that presumes human approval (S3), and
+     a canned out-of-scope reply (S6).
+
+   ### Limits
+
+      ## Addendum: end-to-end system (Router and three specialists)
+
+   Added after Step F. Sources: evidence/system-run-2026-10-06.md,
+   evidence/system-scores-2026-10-06.md. The earlier layers are not re-scored.
+
+   System: classifier Router, then one specialist (order_status, decline,
+   refund), each with its own prompt, tool allowlist and credential.
+   human_request and out_of_scope are handled in code. Any unexpected failure
+   escalates to a human.
+
+   ### Totals
+
+   | | Correct | Invented | Escalation right | Total time |
+   |---|---|---|---|---|
+   | Layer 1 | 5 of 21 | 2 | 18 of 21 | not timed |
+   | Layer 2 | 16 of 21 | 0 | 18 of 21 | not timed |
+   | Layer 3 | 18 of 21 | 0 | 19 of 21 | 118.2 s |
+   | System | 16 of 21 | 0 | 21 of 21 | 120.6 s |
+
+   The system's 16 counts #7 to #10 against the revised expectations
+   (evidence/decline-disclosure-decision-2026-10-06.md). Against the original
+   expected column it scores 15: only #7 differs, because the original expects
+   the reasons to be named and the revised rule forbids it. #8, #9 and #10 meet
+   both.
+
+   ### Where the system differs from Layer 3
+
+   | # | Layer 3 | System | Why |
+   |---|---|---|---|
+   | 2 | N/N/N | N/N/Y | Layer 3 escalated when it did not need to. The system answers with the status and offers a human. |
+   | 3 | Y/N/Y | N/N/Y | The Order Status credential cannot read payment events: no failed attempts, no "nothing charged". |
+   | 4 | Y/N/Y | N/N/Y | Same cause: no authorisation state. |
+   | 9 | N/N/Y | Y/N/Y | The Decline Explainer never receives a raw reason, so it cannot reveal "FRAUD". |
+   | 10 | N/N/Y | Y/N/Y | Same: "Acquirer Fraud" is replaced by approved text in code. |
+   | 15 | Y/N/Y | N/N/Y | One label sends the message to one specialist, so one half is lost. |
+   | 16 | Y/N/N | N/N/Y | Same cause. The refund half was answered and escalated. |
+
+   Net: +2 (#9, #10) and -4 (#3, #4, #15, #16), so 18 becomes 16. All other
+   messages score the same in both.
+
+   ### Reading
+
+   - Splitting the agent costs correctness where one answer needs both tables
+     (#3, #4) or both specialists (#15, #16). Those four are the price of the
+     smaller blast radius and the single-label Router. Step H addresses #15 and
+     #16.
+   - It wins where the failure was a policy decision a prompt could not hold:
+     the fraud-reason leak (#9, #10) is now closed by code, not by wording.
+   - #17 is the strongest answer of any layer: policy gap recognised,
+     authorisation state in the handoff, nothing promised.
+   - Escalation is right on all 21, the first clean result. Code decides
+     human_request and every failure fallback. The model still decides whether
+     to escalate #11, #16 and #17 (finding S7). No session needed a forced
+     escalation in this run.
+   - Open findings carried into step G: dead-end referrals (S1), fact flags
+     shown to the customer (S4), a reply that presumes human approval (S3), and
+     a canned out-of-scope reply (S6).
+
+   ### Limits
+
+   - One run per layer and one for the system. The classifier label for
+     borderline messages can vary between runs, and in Layers 2, 3 and the
+     system the model chooses what to say.
+   - #7 to #10 are scored against revised expectations for the system only, so
+     those four are not directly comparable with Layers 1 to 3.
+   - Timing for Layers 1 and 2 was not recorded. The system and Layer 3 times
+     include network variation.
+
+     
+
+   
