@@ -11,11 +11,15 @@ export function decideEligibility({ order, events = [], now = Date.now() }) {
   const age_days = Math.floor((now - new Date(order.created_at)) / 86400000);
   const captured = ok(events, "CAPTURE");
   const refund_recorded = ok(events, "REFUND");
+  const authorised = ok(events, "AUTHORISATION");
+  const cancellation_recorded = ok(events, "CANCELLATION");
   const facts = {
     status: order.status,
     total: money(order),
     age_days,
+    authorised,
     captured,
+    cancellation_recorded,
     refund_recorded,
   };
   const out = (verdict, reason) => ({ verdict, reason, facts });

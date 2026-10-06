@@ -63,3 +63,16 @@ test("unknown status: the policy has no rule", () => {
   const r = run(order("fulfilled", 5), AUTH_CAP);
   assert.deepEqual([r.verdict, r.reason], ["no_rule", "status_not_covered"]);
 });
+test("cancelled order facts carry the authorisation state", () => {
+  const r = run(order("cancelled", 11), [
+    ev("AUTHORISATION"),
+    ev("CANCELLATION"),
+  ]);
+  assert.equal(r.facts.authorised, true);
+  assert.equal(r.facts.captured, false);
+  assert.equal(r.facts.cancellation_recorded, true);
+});
+test("a failed authorisation is not counted as authorised", () => {
+  const r = run(order("pending", 2), [ev("AUTHORISATION", "false")]);
+  assert.equal(r.facts.authorised, false);
+});

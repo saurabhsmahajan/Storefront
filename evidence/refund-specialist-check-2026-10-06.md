@@ -47,3 +47,28 @@
      "notdetermined") are probably console artefacts and were not scored.
    - The allowlist violation path was not exercised.
    - #16 and #15-style mixed requests are not handled by this specialist.
+
+      ## After the R1 change (same day)
+
+   Change: decideEligibility now returns authorised and cancellation_recorded
+   in the facts, in addition to the earlier fields. Verdicts and reason codes
+   are unchanged. Two tests added: 13 passed, 0 failed.
+   The prompt gained a paragraph asking the model to report all facts in the
+   escalation reason, call an uncaptured authorisation "a hold", and not tell
+   the customer whether money has left their account.
+   Run: node --env-file=.env agents/specialists/try-refund.mjs 11 14 17
+
+   | # | Decision | Correct | Escalated | Note |
+   |---|---|---|---|---|
+   | 11 | eligible / within_window | Y | yes | Unchanged. Reason now lists all four facts. |
+   | 14 | not_eligible / never_paid | Y | yes | Content correct. The model now escalates, where the before run only offered a human. The test set expects an offer, so the escalation mark is N. |
+   | 17 | no_rule / cancelled_order | Y | yes | R1 fixed: the reason states authorised yes, captured no, cancellation recorded yes, refund recorded no, and asks the human to confirm whether money has left the account. The reply makes no claim about the customer's money. |
+
+   R1: resolved.
+   R2 (#14): regression. The escalation mark went from Y to N between the
+   before and after runs. Cause unknown: the new prompt paragraph or run
+   variance. One run each, so the two cannot be separated. Not tuned: this is
+   the escalation inconsistency seen in Layer 3 (#2, #11, #16), which needs a
+   code rule (step G).
+
+   Limits: one run. Console glitches ("paymentauthorised") are not scored.
