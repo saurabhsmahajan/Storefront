@@ -1,0 +1,45 @@
+{
+  "default_tier": "never_tell",
+  "tiers": {
+    "category": "The bank declined the card. Check the card details and the available funds, or try another card.",
+    "never_tell": "The payment could not be authorised. Contact your bank or use another payment method. A human agent can look into it."
+  },
+  "reasons": {
+    "3D Not Authenticated": {
+      "tier": "plain",
+      "text": "The bank's identity check (3D Secure, for example a code or app approval) was not completed."
+    },
+    "Issuer Unavailable": {
+      "tier": "plain",
+      "text": "The card issuer's system could not be reached at the time. This is usually temporary."
+    },
+    "Shopper Cancelled": {
+      "tier": "plain",
+      "text": "The payment was cancelled before it was completed."
+    },
+    "Not enough balance": {
+      "tier": "category"
+    },
+    "Expired Card": {
+      "tier": "category"
+    },
+    "CVC Declined": {
+      "tier": "category"
+    },
+    "FRAUD": {
+      "tier": "never_tell"
+    },
+    "FRAUD-CANCELLED": {
+      "tier": "never_tell"
+    },
+    "Acquirer Fraud": {
+      "tier": "never_tell"
+    },
+    "Issuer Suspected Fraud": {
+      "tier": "never_tell"
+    },
+    "Refused": {
+      "tier": "never_tell"
+    }
+  }
+}
