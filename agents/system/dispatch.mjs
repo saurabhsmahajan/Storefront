@@ -51,7 +51,11 @@ function findingsFor(route, r) {
 
 // Every exit returns outcome "resolved" or "escalated". Whenever the rules
 // say escalate, a validated handoff package is built.
-export async function handleMessage(message) {
+// deps is optional and exists so tests can swap in a failing classifier or
+// specialist. With nothing passed, the real ones run.
+export async function handleMessage(message, deps = {}) {
+  const classify = deps.classify ?? classifyIntent;
+  const specialists = deps.specialists ?? SPECIALISTS;
   const t0 = Date.now();
   const orderId = message.match(UUID)?.[0] ?? null;
   const done = (route, r) => ({ route, ms: Date.now() - t0, ...r });
@@ -93,7 +97,7 @@ export async function handleMessage(message) {
   let route;
   let routerFailed = false;
   try {
-    route = (await classifyIntent(message)).intent;
+    route = (await classify(message)).intent;
   } catch (err) {
     routerFailed = true;
     route = "router_error";
@@ -120,7 +124,7 @@ export async function handleMessage(message) {
   }
 
   // Step 2: run the specialist, then apply the rules to what happened.
-  const run = SPECIALISTS[route];
+  const run = specialists[route];
   let r;
   try {
     r = await run(message);
