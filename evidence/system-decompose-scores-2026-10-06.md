@@ -45,6 +45,30 @@
      replied, even if the reply says it cannot answer (shipping). unanswered
      only covers failures. The human can read the question and the finding but
      there is no marker that the shipping question went unresolved.
+        - D6 (X2): two orders in one message. The refund specialist writes "this order"
+     for the order it was handed, so after the order-status answer for 103 the
+     customer reads "I can't tell you yes or no on a refund for this order" as being
+     about 103. Each subtask's reply must name its order. Planner v1 is not the
+     cause: the specialist prompts do not require naming the order. Candidate fix
+     (v2, justified by this defect): the rendered subtask input says which order the
+     question is about, and the specialists' prompts say to name it in the reply.
+     Not applied yet.
+   - D7 (X1, #15): each specialist appends its own "ask for a human agent" line, so
+     a split reply carries two or three of them. Cosmetic, same cause as D3.
+   - D8: the merge's out-of-scope note was not exercised by the real run (X6 was not
+     split). It is covered by dispatch test 11.
+        - D6 (X2): two orders in one message. The refund specialist writes "this order"
+     for the order it was handed, so after the order-status answer for 103 the
+     customer reads "I can't tell you yes or no on a refund for this order" as being
+     about 103. Each subtask's reply must name its order. Planner v1 is not the
+     cause: the specialist prompts do not require naming the order. Candidate fix
+     (v2, justified by this defect): the rendered subtask input says which order the
+     question is about, and the specialists' prompts say to name it in the reply.
+     Not applied yet.
+   - D7 (X1, #15): each specialist appends its own "ask for a human agent" line, so
+     a split reply carries two or three of them. Cosmetic, same cause as D3.
+   - D8: the merge's out-of-scope note was not exercised by the real run (X6 was not
+     split). It is covered by dispatch test 11.
    - T1: the planner is on the critical path. In #15 about 4.2 s passed before
      either subtask started. Parallel saved about 3.6 to 3.8 s per split.
 
@@ -54,3 +78,12 @@
 
    - One run. The planner and the specialists are models, so a rerun can differ.
    - The marks do not capture D1 and D2: the test set's must-nots are all met.
+      - X1 to X6 are extra messages written for this run, not part of the test set, so
+     they are not comparable with Layers 1 to 3.
+
+      | X1 | Y | N | Y | Three subtasks in parallel (all start at 0). Status, three category-level declines, "nothing to refund". Stitched: two "ask for a human agent" lines. |
+   | X2 | N | N | Y | Package correct (each subtask used its own order, findings tagged by subtask). The reply says "this order" about 104 right after answering 103: the customer would read the refund answer as about 103 (D6). |
+   | X3 | Y | N | Y | R1 from the classifier: steps 0, no tools, order ID in the package. |
+   | X4 | Y | N | Y | No refund subtask or action. Single order_status path, refuses the injected instruction. |
+   | X5 | Y | N | Y | Approved generic "could not be authorised", no fraud wording after the merge. |
+   | X6 | Y | N | Y | Status answered, laptop question declined. Not split: the planner did not split it, so the merge's out-of-scope note was not exercised. |
