@@ -34,6 +34,14 @@ const REFUND_RECOMMENDATION =
 
 const attempt = (fn) => Promise.resolve().then(fn);
 
+// Never rejects: a failure becomes { status: "rejected", reason }. A call that
+// nobody is waiting for any more cannot turn into an unhandled rejection.
+const settle = (promise) =>
+  promise.then(
+    (value) => ({ status: "fulfilled", value }),
+    (reason) => ({ status: "rejected", reason }),
+  );
+
 // Rejects with "timeout" if the promise has not settled within ms. The timer is
 // always cleared. The work itself is not cancelled: a late result is ignored.
 function withTimeout(promise, ms) {
@@ -109,12 +117,18 @@ async function handle(message, deps, t0) {
     });
   };
 
-  // Step 1: classifier and planner run together. R1 and R2 are decided from
-  // the classifier alone, exactly as before.
-  const [cls, pl] = await Promise.allSettled([
-    attempt(() => classify(message)),
-    attempt(() => plan(message)),
-  ]);
+  // Step 1: classifier and planner start together, and each call is bounded by
+  // routerTimeoutMs. R1, R2 and out_of_scope are decided from the classifier
+  // alone: the planner is optional and is only awaited once a specialist is
+  // about to run, so a slow planner cannot delay an explicit human request.
+  const routerTimeoutMs = deps.routerTimeoutMs ?? 30000;
+  const clsP = settle(
+    attempt(() => withTimeout(classify(message), routerTimeoutMs)),
+  );
+  const plP = settle(
+    attempt(() => withTimeout(plan(message), routerTimeoutMs)),
+  );
+  const cls = await clsP;
   let route;
   let routerFailed = false;
   if (cls.status === "rejected") {
@@ -145,6 +159,7 @@ async function handle(message, deps, t0) {
   }
 
   // Step 2: the plan is used only if it is valid. Otherwise today's path runs.
+  const pl = await plP;
   let usable = null;
   let planErrors = [];
   if (pl.status === "fulfilled" && pl.value?.plan) {
