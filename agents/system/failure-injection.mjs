@@ -129,6 +129,7 @@ const ROWS = [
         handleMessage(`Where is my order ${ORD103}?`, {
           classify: stubClassify("order_status"),
           plan: noPlan,
+          timeoutMs: 1500,
         }),
         4000,
       );

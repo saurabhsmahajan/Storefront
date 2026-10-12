@@ -34,6 +34,16 @@ const REFUND_RECOMMENDATION =
 
 const attempt = (fn) => Promise.resolve().then(fn);
 
+// Rejects with "timeout" if the promise has not settled within ms. The timer is
+// always cleared. The work itself is not cancelled: a late result is ignored.
+function withTimeout(promise, ms) {
+  let timer;
+  const clock = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("timeout")), ms);
+  });
+  return Promise.race([promise, clock]).finally(() => clearTimeout(timer));
+}
+
 // What the receiver is given. Findings come from tool results held in code.
 // They are verified; the model's text is not.
 function findingsFor(route, r, subtaskId = null) {
@@ -320,7 +330,10 @@ async function handle(message, deps, t0) {
     if (!v.ok) {
       throw new Error(`Invalid subtask package: ${v.errors.join("; ")}`);
     }
-    r = await run(renderForSpecialist(pkg));
+    r = await withTimeout(
+      run(renderForSpecialist(pkg)),
+      deps.timeoutMs ?? 60000,
+    );
   } catch (err) {
     return escalated({
       route,

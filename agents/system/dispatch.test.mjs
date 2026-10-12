@@ -139,7 +139,7 @@ const PLAN_16 = {
   unrouted: [],
 };
 
-const ODD = `  Where is   my order ${ORD_103}?\t please…  \n`;
+const ODD = `  Where is   my order ${ORD_103}?\t please…  \n`;
 
 test("1. single intent, plan null: the specialist receives the raw message", async () => {
   for (const route of ["order_status", "decline", "refund"]) {
@@ -616,6 +616,56 @@ test("18. two-order split: each specialist gets its own order's line only", asyn
   assert.ok(!calls.order_status[0].includes(ORD_104));
   assert.ok(!calls.refund[0].includes(ORD_103));
   assert.equal(r.route, "multi:order_status+refund");
+});
+
+test("19. single path: a specialist that never returns times out and escalates", async () => {
+  const r = await run(`Where is order ${ORD_103}?`, {
+    classify: classifyAs("order_status"),
+    plan: noPlan,
+    specialists: { order_status: () => new Promise(() => {}) },
+    timeoutMs: 200,
+  });
+  assert.equal(r.outcome, "escalated");
+  assert.equal(r.handoff.trigger, "specialist_error");
+  assert.equal(r.reply, FALLBACK_REPLY);
+  assert.match(r.handoff.agent_note, /timeout/);
+  assert.ok(r.ms >= 150 && r.ms < 1500, `ms ${r.ms}`);
+});
+
+test("20. single path: a result that arrives after the timeout changes nothing", async () => {
+  let late = false;
+  const r = await run(`Where is order ${ORD_103}?`, {
+    classify: classifyAs("order_status"),
+    plan: noPlan,
+    specialists: {
+      order_status: async () => {
+        await sleep(400);
+        late = true;
+        throw new Error("late failure, nobody is listening");
+      },
+    },
+    timeoutMs: 100,
+  });
+  assert.equal(r.outcome, "escalated");
+  assert.equal(r.handoff.trigger, "specialist_error");
+  await sleep(600);
+  assert.equal(late, true);
+  assert.equal(r.outcome, "escalated");
+});
+
+test("21. single path: a specialist inside the time limit is unaffected", async () => {
+  const { specialists, calls } = makeSpecialists({
+    order_status: { delay: 50, reply: "Your order is paid." },
+  });
+  const msg = `Where is order ${ORD_103}?`;
+  const r = await run(msg, {
+    classify: classifyAs("order_status"),
+    plan: noPlan,
+    specialists,
+    timeoutMs: 1000,
+  });
+  assert.equal(r.outcome, "resolved");
+  assert.deepEqual(calls.order_status, [msg]);
 });
 
 // Runs last: node:test runs top-level tests in file order.
