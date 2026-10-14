@@ -1,11 +1,13 @@
 {
   "permissions": {
     "deny": [
-      "Read(.env)",
-      "Read(frontend/.env)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Edit(**/.env*)",
       "Edit(supabase/migrations/**)",
-      "Write(supabase/migrations/**)",
-      "Read(evidence/decoy-secret.txt)"
+      "Read(evidence/decoy-secret.txt)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
     ]
   },
   "hooks": {
@@ -16,6 +18,17 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-on-edit.mjs\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-secret-access.mjs\""
           }
         ]
       }
