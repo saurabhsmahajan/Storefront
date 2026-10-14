@@ -25,8 +25,10 @@ delete from public.orders where id = '5eed0000-0000-4000-8000-0000000001a1';
 ```
 then delete the user in Authentication, Users.
 
+## Proven since the first write-up
+- A real order that belongs to a different customer (`...0102`, a guest order) returns `not_found` on all three tools, the same as an order that does not exist. See the "real order of another customer" calls in `week-3-mcp-server-calls-live-2026-10-14.md`.
+
 ## Not proven yet
-- A real order that belongs to a different customer returning `not_found`. The first live run used a random ID. The evidence client now takes `ORDER_OTHER` for this; run it and add the result.
 - `upstream_unavailable` and `internal` were only tested with fakes (unit tests), not live.
 - The one-order scoping of payment reads is done in function code, not by row-level security (see the design note).
 - The refund rules and the decline reasons file exist twice (agents and function). Tests fail if they drift, but a drift is still possible between a test run and a deploy.

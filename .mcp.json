@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "storefront": {
+      "type": "http",
+      "url": "${STOREFRONT_MCP_URL}",
+      "headers": {
+        "Authorization": "Bearer ${STOREFRONT_CUSTOMER_JWT}"
+      }
+    }
+  }
+}
