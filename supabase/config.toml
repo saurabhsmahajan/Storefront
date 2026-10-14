@@ -425,6 +425,14 @@ entrypoint = "./functions/create-checkout-session/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/create-checkout-session/*.html" ]
 
+[functions.storefront-mcp]
+enabled = true
+# The function verifies the customer token itself (auth.getUser) when a tool is called,
+# so the tool list can be read before sign-in.
+verify_jwt = false
+import_map = "./functions/storefront-mcp/deno.json"
+entrypoint = "./functions/storefront-mcp/index.ts"
+
 [functions.adyen-webhook]
 enabled = true
 verify_jwt = false
