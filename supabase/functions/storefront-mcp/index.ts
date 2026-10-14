@@ -47,7 +47,13 @@ async function principalClient(tool: keyof typeof PRINCIPALS) {
     email: p.email,
     password: env(p.passwordVar),
   });
-  if (error || !data.session) throw new Error("principal sign-in failed");
+  if (error || !data.session) {
+    // Log the cause for the operator. Never log passwords or keys.
+    console.error(
+      `principal sign-in failed for ${tool}: ${error?.message ?? "no session"}; password secret set: ${env(p.passwordVar) !== ""}`,
+    );
+    throw new Error("principal sign-in failed");
+  }
   sessions.set(tool, {
     client,
     expiresAt: (data.session.expires_at ?? 0) * 1000,
@@ -83,7 +89,10 @@ function makeCtx(authHeader: string | null): Ctx {
         .select("event_type,payload")
         .eq("order_id", orderId)
         .order("received_at");
-      if (error) throw new Error("payment_events read failed");
+      if (error) {
+        console.error(`payment_events read failed for ${as}: ${error.message}`);
+        throw new Error("payment_events read failed");
+      }
       return data ?? [];
     },
   };

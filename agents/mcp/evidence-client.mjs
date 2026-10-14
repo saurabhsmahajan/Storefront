@@ -1,6 +1,6 @@
 // Calls the storefront-mcp function as a client and writes a dated evidence file.
 // Env: TARGET_SLUG (file name part, e.g. "live"), MCP_URL (function URL), CUSTOMER_JWT (a signed-in customer's access token),
-//      ORDER_OWN (an order ID owned by that customer), TARGET_LABEL (e.g. "local, fake backend").
+//      ORDER_OWN (an order ID owned by that customer), ORDER_OTHER (optional: a real order ID of another customer), TARGET_LABEL (e.g. "local, fake backend").
 import fs from "node:fs";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -10,6 +10,8 @@ const {
   CUSTOMER_JWT,
   ORDER_OWN,
   TARGET_LABEL = "unlabelled",
+  TARGET_SLUG = "run",
+  ORDER_OTHER,
 } = process.env;
 if (!MCP_URL || !CUSTOMER_JWT || !ORDER_OWN) {
   console.error("Set MCP_URL, CUSTOMER_JWT and ORDER_OWN.");
@@ -53,6 +55,26 @@ const calls = [
   ["get_order", { order_id: "101" }, "error: invalid_input"],
   ["get_order", { order_id: OTHER }, "error: not_found"],
 ];
+// A real order that belongs to a different customer must look exactly like a missing one.
+if (ORDER_OTHER) {
+  calls.push(
+    [
+      "get_order",
+      { order_id: ORDER_OTHER },
+      "error: not_found, real order of another customer",
+    ],
+    [
+      "get_payment_status",
+      { order_id: ORDER_OTHER },
+      "error: not_found, real order of another customer",
+    ],
+    [
+      "check_refund_eligibility",
+      { order_id: ORDER_OTHER },
+      "error: not_found, real order of another customer",
+    ],
+  );
+}
 log("## Calls", "");
 for (const [name, args, label] of calls) {
   const r = await c.callTool({ name, arguments: args });
