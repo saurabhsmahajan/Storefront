@@ -20,6 +20,15 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-on-edit.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "mcp__storefront__get_order",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/tool-prerequisites.mjs\""
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -29,6 +38,15 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-secret-access.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__storefront__check_refund_eligibility",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/tool-prerequisites.mjs\""
           }
         ]
       }
