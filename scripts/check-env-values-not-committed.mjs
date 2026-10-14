@@ -4,6 +4,10 @@
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
 
+// Public by design: the project web address is shipped to every browser by the frontend
+// and appears in evidence as the function address. Everything else is treated as secret.
+const PUBLIC_BY_DESIGN = new Set(["SUPABASE_URL"]);
+
 const envFile = process.argv[2] ?? ".env";
 if (!fs.existsSync(envFile)) {
   console.error(`No ${envFile} here. Nothing to check against.`);
@@ -16,7 +20,8 @@ for (const line of fs.readFileSync(envFile, "utf8").split(/\r?\n/)) {
   );
   if (!m) continue;
   const value = m[2].trim().replace(/^(['"])(.*)\1$/, "$2");
-  if (value.length >= 8) secrets.push([m[1], value]);
+  if (value.length >= 8 && !PUBLIC_BY_DESIGN.has(m[1]))
+    secrets.push([m[1], value]);
 }
 const files = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
   .split("\0")
@@ -34,6 +39,9 @@ for (const f of files) {
     if (text.includes(value)) hits.push(`${name} found in ${f}`);
   }
 }
+console.log(
+  `Skipped as public by design: ${[...PUBLIC_BY_DESIGN].join(", ")}.`,
+);
 console.log(
   `Checked ${secrets.length} values from ${envFile} against ${files.length} tracked files.`,
 );
