@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { clearState } from "../mcp/prerequisites.mjs";
 import {
   REDACTED,
+  toolResultsFromLog,
   buildHooks,
   decideToolCall,
   redactToolResponse,
@@ -164,4 +165,57 @@ test("SDK wiring: record on success, block before, redact after", async () => {
   assert.equal(JSON.parse(out[0].text).attempts[0].refusal_reason, REDACTED);
   assert.equal(log.filter((e) => e.allow === false).length, 1);
   clearState(session);
+});
+
+test("hook log to tool results: successes carry the body, unfinished allowed calls count as errors", async () => {
+  const session = "step-f-log-session";
+  clearState(session);
+  const log = [];
+  const hooks = buildHooks({ log: (e) => log.push(e) });
+  const pre = hooks.PreToolUse[0].hooks[0];
+  const post = hooks.PostToolUse[0].hooks[0];
+  const a = { session_id: session, tool_input: { order_id: ID } };
+  await pre({
+    ...a,
+    tool_use_id: "t1",
+    tool_name: "mcp__storefront__get_order",
+  });
+  await post({
+    ...a,
+    tool_use_id: "t1",
+    tool_name: "mcp__storefront__get_order",
+    tool_response: text({ status: "paid" }),
+  });
+  await pre({
+    ...a,
+    tool_use_id: "t2",
+    tool_name: "mcp__storefront__get_order",
+  });
+  await pre({
+    ...a,
+    tool_use_id: "t3",
+    tool_name: "mcp__storefront__check_refund_eligibility",
+  });
+  const results = toolResultsFromLog(log);
+  assert.equal(results.length, 3);
+  assert.deepEqual(results[0], {
+    name: "mcp__storefront__get_order",
+    isError: false,
+    body: { status: "paid" },
+  });
+  assert.equal(results[1].isError, true);
+  clearState(session);
+});
+
+test("redaction: the authCode:last4:expiry triple is caught under any field name", () => {
+  const { value, redactions } = redactValue({
+    events: [
+      { eventCode: "AUTHORISATION", reason: "602715:1111:11/2028", note: "ok" },
+    ],
+    other: "see 12:30 tomorrow",
+  });
+  assert.equal(value.events[0].reason, REDACTED);
+  assert.equal(value.events[0].note, "ok");
+  assert.equal(value.other, "see 12:30 tomorrow");
+  assert.deepEqual(redactions, ["events[0].reason"]);
 });

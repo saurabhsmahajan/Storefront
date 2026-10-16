@@ -11,7 +11,7 @@ import {
   tool,
 } from "@anthropic-ai/claude-agent-sdk";
 import { MODEL } from "../config.mjs";
-import { buildHooks } from "./hooks.mjs";
+import { buildHooks, toolResultsFromLog } from "./hooks.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SYSTEM = fs
@@ -51,6 +51,8 @@ export async function runSdkRouter(message, { approvals = new Set() } = {}) {
   const t0 = Date.now();
   const hookLog = [];
   const toolCalls = [];
+  const toolResults = [];
+  let forcedReason = null;
   let reply = "";
   let turns = 0;
   for await (const m of query({
@@ -86,7 +88,42 @@ export async function runSdkRouter(message, { approvals = new Set() } = {}) {
         if (b.type === "text") reply = b.text;
       }
     }
-    if (m.type === "result" && typeof m.result === "string") reply = m.result;
+    if (m.type === "user" && Array.isArray(m.message?.content)) {
+      for (const b of m.message.content) {
+        if (b.type !== "tool_result") continue;
+        const raw = Array.isArray(b.content)
+          ? b.content.map((x) => x?.text ?? "").join("")
+          : String(b.content ?? "");
+        let body = null;
+        try {
+          body = JSON.parse(raw);
+        } catch {}
+        const call = toolCalls.find((c) => c.id === b.tool_use_id);
+        toolResults.push({
+          name: call?.name ?? "unknown",
+          isError: b.is_error === true || (body && "error" in body),
+          body,
+        });
+      }
+    }
+    if (m.type === "result") {
+      if (typeof m.result === "string") reply = m.result;
+      if (m.subtype && m.subtype !== "success") {
+        forcedReason =
+          m.subtype === "error_max_turns"
+            ? "step_cap"
+            : `unexpected_stop_reason:${m.subtype}`;
+      }
+    }
   }
-  return { reply, toolCalls, hookLog, turns, ms: Date.now() - t0 };
+  return {
+    reply,
+    toolCalls,
+    toolResults: toolResultsFromLog(hookLog),
+    streamToolResults: toolResults,
+    forcedReason,
+    hookLog,
+    turns,
+    ms: Date.now() - t0,
+  };
 }

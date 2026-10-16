@@ -38,6 +38,7 @@ const SENSITIVE_KEYS = new Set([
   "refusalreasonraw",
   "rawrefusalreason",
 ]);
+const CARD_TRIPLE = /^[A-Za-z0-9]{4,10}:\d{4}:\d{1,2}\/\d{4}$/;
 const norm = (k) => String(k).toLowerCase().replace(/[_-]/g, "");
 
 // Returns { value, redactions: string[] } with sensitive keys replaced, at any depth.
@@ -55,6 +56,12 @@ export function redactValue(value, pathPrefix = "") {
         } else out[k] = walk(x, here);
       }
       return out;
+    }
+    // Adyen puts "authCode:cardSummary:expiry" (for example 123456:1111:03/2030) in a
+    // field called "reason". Catch the value, whatever the field is called.
+    if (typeof v === "string" && CARD_TRIPLE.test(v.trim())) {
+      redactions.push(p || "(value)");
+      return REDACTED;
     }
     return v;
   };
@@ -84,6 +91,41 @@ export function redactToolResponse(toolResponse) {
     response: isList ? cleaned : { ...toolResponse, content: cleaned },
     redactions,
   };
+}
+
+// The JSON body of the first text block (what the model sees), or null.
+export function bodyOf(toolResponse) {
+  const blocks = Array.isArray(toolResponse)
+    ? toolResponse
+    : toolResponse?.content;
+  const text = Array.isArray(blocks)
+    ? blocks.find((b) => b?.type === "text")?.text
+    : null;
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Tool results as the escalation rules need them, read from the hook log:
+// a successful call is its PostToolUse body; a call that Pre allowed but that never
+// succeeded (an error result, a failure event or a crash) counts as one error.
+export function toolResultsFromLog(hookLog = []) {
+  const results = [];
+  const succeeded = new Set();
+  for (const e of hookLog) {
+    if (e.event === "PostToolUse" && e.succeeded) {
+      succeeded.add(e.tool_use_id);
+      results.push({ name: e.tool, isError: false, body: e.body });
+    }
+  }
+  for (const e of hookLog) {
+    if (e.event === "PreToolUse" && e.allow && !succeeded.has(e.tool_use_id)) {
+      results.push({ name: e.tool, isError: true, body: null });
+    }
+  }
+  return results;
 }
 
 // Decides one tool call. `approvals` = Set of order ids a human has approved a refund for.
@@ -129,6 +171,7 @@ export function buildHooks({ approvals = new Set(), log = () => {} } = {}) {
     );
     log({
       event: "PreToolUse",
+      tool_use_id: input.tool_use_id ?? null,
       tool: input.tool_name,
       input: input.tool_input,
       allow: v.allow,
@@ -154,12 +197,18 @@ export function buildHooks({ approvals = new Set(), log = () => {} } = {}) {
         loadState(input.session_id),
       ),
     );
+    // An approval is single-use: a successful execute_refund spends it.
+    if (ok && bareName(input.tool_name) === "execute_refund") {
+      approvals.consume?.(input.tool_input?.order_id);
+    }
     const { response, redactions } = redactToolResponse(input.tool_response);
     log({
       event: "PostToolUse",
+      tool_use_id: input.tool_use_id ?? null,
       tool: input.tool_name,
       succeeded: ok,
       redactions,
+      body: bodyOf(response),
     });
     if (!redactions.length) return {};
     return {
@@ -169,8 +218,18 @@ export function buildHooks({ approvals = new Set(), log = () => {} } = {}) {
       },
     };
   };
+  const failed = async (input) => {
+    log({
+      event: "PostToolUseFailure",
+      tool_use_id: input.tool_use_id ?? null,
+      tool: input.tool_name,
+      error: String(input.error ?? "").slice(0, 300),
+    });
+    return {};
+  };
   return {
     PreToolUse: [{ matcher: "mcp__.*", hooks: [pre] }],
     PostToolUse: [{ matcher: "mcp__.*", hooks: [post] }],
+    PostToolUseFailure: [{ matcher: "mcp__.*", hooks: [failed] }],
   };
 }
