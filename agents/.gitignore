@@ -1,5 +1,0 @@
-.env
-.env.local
-node_modules/
-agents/review/inbox/
-agents/review/approvals.json
