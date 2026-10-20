@@ -555,4 +555,4 @@ const out = [
 const file = path.join(root, "evidence", `failure-injection-log-${stamp}.md`);
 fs.writeFileSync(file, out.join("\n"));
 console.log(`Saved ${file}`);
-process.exit(0);
+process.exit(passed === results.length ? 0 : 1);

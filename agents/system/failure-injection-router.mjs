@@ -240,4 +240,4 @@ const file = path.join(
 );
 fs.writeFileSync(file, out.join("\n"));
 console.log(`Saved ${file}`);
-process.exit(0);
+process.exit(passed === results.length ? 0 : 1);

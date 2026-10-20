@@ -1,0 +1,47 @@
+name: CI
+
+# Runs on every push and every pull request. No secrets are needed or provided:
+# every check here is offline (the model and database are replaced by stand-ins).
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the code (full history, for the secrets scan)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node (version pinned in .nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install agent dependencies
+        run: npm ci
+        working-directory: agents
+
+      - name: Formatting check
+        run: npx prettier --check .
+
+      - name: Secrets scan (files and history)
+        run: node scripts/scan-secrets.mjs --history
+
+      - name: Unit tests
+        run: node --test "agents/**/*.test.mjs" "scripts/**/*.test.mjs"
+
+      - name: Failure injection, system rows
+        run: node --experimental-test-module-mocks agents/system/failure-injection.mjs
+
+      - name: Failure injection, router rows
+        run: node --experimental-test-module-mocks agents/system/failure-injection-router.mjs
