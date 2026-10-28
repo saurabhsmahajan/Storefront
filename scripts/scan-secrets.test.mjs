@@ -12,6 +12,7 @@ const fake = {
   jwt: ["eyJ" + "a".repeat(20), "eyJ" + "b".repeat(20), "c".repeat(20)].join(
     ".",
   ),
+  voyage: "pa-" + "x9".repeat(20),
 };
 
 test("each pattern catches its fake key", () => {
@@ -34,12 +35,20 @@ test("ordinary text and short look-alikes are not flagged", () => {
     "the sk-ant prefix is used for Anthropic keys",
     "commit a03430c and order 5eed0000-0000-4000-8000-0000000001a1",
     "sha256 3f2a9c1e5b7d4e8a9c217d4e5f6a8b90",
+    "see pa- in the notes",
   ])
     assert.deepEqual(scanText(t), [], t);
 });
 
 test("there is at least one pattern per key family we use", () => {
   const names = PATTERNS.map((p) => p[0]).join(" ");
-  for (const k of ["Supabase", "Anthropic", "GitHub", "Adyen", "Private key"])
+  for (const k of [
+    "Supabase",
+    "Anthropic",
+    "GitHub",
+    "Adyen",
+    "Private key",
+    "Voyage",
+  ])
     assert.match(names, new RegExp(k));
 });

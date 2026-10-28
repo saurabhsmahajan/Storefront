@@ -16,6 +16,7 @@ export const PATTERNS = [
     /eyJ[A-Za-z0-9_-]{15,}\.eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}/,
   ],
   ["Anthropic API key", /sk-ant-[A-Za-z0-9_-]{20,}/],
+  ["Voyage AI API key", /\bpa-[A-Za-z0-9_-]{30,}/],
   ["OpenAI-style API key", /\bsk-[A-Za-z0-9]{32,}\b/],
   ["GitHub token", /\bgh[pousr]_[A-Za-z0-9]{36,}\b/],
   ["GitHub fine-grained token", /\bgithub_pat_[A-Za-z0-9_]{50,}\b/],
