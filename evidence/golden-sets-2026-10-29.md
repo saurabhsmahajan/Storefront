@@ -28,7 +28,7 @@ Every fifth case by id in each set is held back, fixed before any scores existed
 
 ## Open items
 
-- Order age: facts are written without ages, except RF-01 (order 103 must be inside the 30-day window), flagged `depends_on_order_age`. Order 103 is close to passing 30 days. Re-seed the order dates, or fix an "as of" date, before the first golden run.
+- Order age: resolved 2026-10-29. Order 103 would have passed the 30-day window on 2026-11-01. It was re-dated to 2 days before the run, using `scripts/reset-seed-ages.sql`, which moves its two payment events by the same amount. Re-run the script before a golden run whenever order 103 is more than about 25 days old. The seed orders were inserted directly into the database and are not in the repo, so the seed cannot be rebuilt from a clean clone (a finding for the risk register in step J).
 - Retrieval cases: eight Refund cases and DX-11 are flagged `requires_retrieval`. They cannot pass before `search_policy` exists (step G), and are expected to fail in the without-retrieval run.
 - Tool lists: `tools_required` for order-based cases comes from the Week 3 run notes. Tighten it after the first run, and record any change here.
 - Scoring: the route, tool and escalation checks are code. `must_contain` and `must_not` are scored by the judge in step H, checked against human labels.
