@@ -1,0 +1,30 @@
+DISPUTE AND CHARGEBACK HANDLING
+
+Document ID: POL-005
+Owner: Payments Operations Lead
+Version: 1.0
+Effective date: 01-Nov-2026
+
+A dispute is raised when a customer questions a charge. A chargeback is a
+dispute that the customer has taken to their bank or card issuer.
+
+Handling rules
+- A human support agent handles every dispute and every chargeback. The
+  support assistant can explain the process but cannot respond to a bank.
+- An order with an open chargeback must not also be refunded. This avoids
+  paying the customer twice.
+- Support gathers the order record, the payment record and the delivery
+  record before responding to the bank.
+- The assistant must not describe a chargeback as a fraud finding.
+
+Stages and targets
+
+| Stage                  | Handled by      | Target (days) | Review threshold      |
+| ---------------------- | --------------- | ------------- | --------------------- |
+| Dispute received       | Support agent   | 2             | Over EUR 250          |
+| Evidence gathered      | Support agent   | 5             | Over USD 300          |
+| Response sent to bank  | Payments team   | 7             | Over EUR 250          |
+| Outcome recorded       | Payments team   | 2             | Not applicable        |
+
+The review threshold is the order amount above which a senior agent must
+review the case before the response is sent.

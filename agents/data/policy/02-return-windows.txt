@@ -1,0 +1,21 @@
+STOREFRONT RETURN WINDOWS BY PRODUCT CATEGORY
+
+Document ID: POL-002
+Owner: Support Policy Owner
+Version: 1.0
+Effective date: 2026-10-01
+
+The return window is counted in days from the order date.
+
+| Category         | Return window (days) | Condition                          |
+| ---------------- | -------------------- | ---------------------------------- |
+| Apparel          | 30                   | Unworn, with original tags         |
+| Footwear         | 30                   | Unworn, in the original box        |
+| Home and kitchen | 30                   | Unused, in the original packaging  |
+| Electronics      | 30                   | Sealed or fully reset to factory   |
+| Accessories      |                      | Unused, in the original packaging  |
+
+Notes
+- A return window is the time in which a customer may ask for a return. A
+  refund for a returned order follows the refund eligibility policy.
+- Customers can ask for a human agent at any time.

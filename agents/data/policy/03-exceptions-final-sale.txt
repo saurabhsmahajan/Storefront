@@ -1,0 +1,25 @@
+EXCEPTIONS AND FINAL-SALE ITEMS
+
+Document ID: POL-003
+Owner: Support Policy Owner
+Version: 1.0
+Effective date: 15/10/2026
+
+Final-sale items
+- Items marked "final sale" on the product page cannot be returned or
+  refunded.
+- Gift cards of any value are final sale.
+- Items sold for Rs. 500 or less during a clearance event are final sale.
+- Personalised or made-to-order items are final sale.
+
+Faulty or damaged items
+- If an item arrives faulty or damaged, the customer should contact support
+  and the item can be returned within a reasonable time.
+- Support may ask for a photo of the fault or damage.
+- Faulty or damaged items are not treated as final sale, even when they were
+  bought as a final-sale item.
+
+Who decides
+- A human support agent decides every exception.
+- The support assistant can explain these rules but cannot grant an
+  exception.

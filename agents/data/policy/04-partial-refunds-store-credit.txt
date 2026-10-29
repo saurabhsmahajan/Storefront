@@ -1,0 +1,22 @@
+PARTIAL REFUNDS AND STORE CREDIT GUIDELINES
+
+Document ID: POL-004
+Owner: Support Operations Lead
+Version: 1.0
+Effective date: October 20, 2026
+
+Partial refunds
+A partial refund is available when only part of an order is returned or
+when an item in the order was faulty. The refund covers the price of the
+affected items only. For example, if one item priced at INR 1,500 is
+returned from a larger order, the partial refund is INR 1,500.
+
+Store credit
+At the customer's request, a refund can be issued as store credit instead of
+being paid back to the original payment method. Store credit is issued for
+the same amount as the refund.
+
+Approval
+Every partial refund and every store credit must be approved by a human
+support agent before it is issued. The support assistant can recommend one
+but cannot issue it.

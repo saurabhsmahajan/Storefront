@@ -1,0 +1,33 @@
+STOREFRONT REFUND ELIGIBILITY POLICY
+
+Document ID: POL-001
+Owner: Support Policy Owner
+Version: 1.0
+Effective date: 2026-10-01
+Replaces: refund and return policy v0 (Week 2 test version)
+
+1. Eligibility window
+   A paid order can be refunded within 30 days of the order date.
+   After 30 days an order is not eligible for a refund.
+
+2. Orders that cannot be refunded
+   2.1 Orders that have already been refunded.
+   2.2 Orders that were never paid (status pending). Nothing was charged, so
+       there is nothing to refund. A failed payment attempt does not create
+       a charge.
+
+3. Refund amount
+   A refund is for the full order total. Partial refunds are not offered.
+
+4. How refunds are paid
+   Refunds go back to the original payment method. They are not issued as
+   store credit.
+
+5. Approval
+   Every refund must be approved by a human support agent before it is
+   issued. The support assistant can check eligibility and recommend a
+   refund, but it cannot issue one.
+
+6. Disagreeing with a decision
+   Customers who disagree with a refund decision can ask for a human agent
+   at any time.
