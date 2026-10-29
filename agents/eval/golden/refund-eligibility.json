@@ -1,0 +1,306 @@
+{
+  "set": "refund_eligibility",
+  "version": "1.0",
+  "created": "2026-10-29",
+  "holdout_rule": "Every fifth case by id (RF-05, RF-10, RF-15) is held back. Never tune a prompt against held-back cases.",
+  "notes": [
+    "Ground truth for order cases is the seed data (orders 101 to 108). Ground truth for policy cases is the corpus in agents/data/policy/ and its manifest (evidence/corpus-manifest-2026-10-29.md).",
+    "Optional fields default to false or empty: requires_retrieval, depends_on_order_age, cites.",
+    "requires_retrieval means the case cannot pass before the search_policy tool exists (step G). It is expected to fail in the without-retrieval run.",
+    "cites lists the policy clauses the answer must cite. Citations are scored from step G onward.",
+    "depends_on_order_age means the expected result changes as the seed order gets older. Re-seed the order dates before running these cases.",
+    "Escalation values: none, offer_only (the answer offers a human), required (the case must end with a handoff to a human).",
+    "tools_required for order cases comes from the Week 3 run notes. Tighten it after the first golden run."
+  ],
+  "cases": [
+    {
+      "id": "RF-01",
+      "source": "test set #11",
+      "holdout": false,
+      "message": "I want a refund for order {ORD_103}.",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status"],
+      "tools_forbidden": [],
+      "escalation": "required",
+      "depends_on_order_age": true,
+      "cites": ["POL-001 section 1", "POL-001 section 5"],
+      "must_contain": [
+        "The order is eligible: paid and inside the 30-day window",
+        "It recommends the refund and says a human decides"
+      ],
+      "must_not": ["Say the refund is issued or approved"]
+    },
+    {
+      "id": "RF-02",
+      "source": "test set #12",
+      "holdout": false,
+      "message": "Can I get a refund on {ORD_102}? I bought it a while ago.",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status"],
+      "tools_forbidden": [],
+      "escalation": "none",
+      "cites": ["POL-001 section 1"],
+      "must_contain": ["Not eligible: outside the 30-day window"],
+      "must_not": ["Promise or offer a refund"]
+    },
+    {
+      "id": "RF-03",
+      "source": "test set #13",
+      "holdout": false,
+      "message": "Please refund {ORD_101}.",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status"],
+      "tools_forbidden": [],
+      "escalation": "none",
+      "cites": ["POL-001 section 2.1"],
+      "must_contain": ["Not eligible: the order has already been refunded"],
+      "must_not": ["Process or promise a second refund"]
+    },
+    {
+      "id": "RF-04",
+      "source": "test set #14",
+      "holdout": false,
+      "message": "Refund order {ORD_105}, I was charged.",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status"],
+      "tools_forbidden": [],
+      "escalation": "offer_only",
+      "cites": ["POL-001 section 2.2"],
+      "must_contain": [
+        "No completed payment is recorded, so there is nothing to refund",
+        "If the bank statement shows a charge, it offers a human agent"
+      ],
+      "must_not": ["Dismiss the claim", "Promise a refund"]
+    },
+    {
+      "id": "RF-05",
+      "source": "test set #17",
+      "holdout": true,
+      "message": "Order {ORD_104} got cancelled but I was charged. Why was it cancelled and will I get my money back?",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status"],
+      "tools_forbidden": [],
+      "escalation": "required",
+      "must_contain": [
+        "No cancellation reason is recorded",
+        "The policy does not cover this case",
+        "It hands the case to a human"
+      ],
+      "must_not": ["Invent a cancellation reason", "Promise money back"]
+    },
+    {
+      "id": "RF-06",
+      "source": "new, corpus: missing term",
+      "holdout": false,
+      "message": "How many days do I have to return an accessory?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "required",
+      "requires_retrieval": true,
+      "cites": ["POL-002"],
+      "must_contain": [
+        "The policy does not state a return window for accessories",
+        "It hands the question to a human"
+      ],
+      "must_not": ["State 30 days or any other number of days for accessories"]
+    },
+    {
+      "id": "RF-07",
+      "source": "new, corpus: vague rule",
+      "holdout": false,
+      "message": "My jacket arrived with a torn seam. How long do I have to send it back?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "required",
+      "requires_retrieval": true,
+      "cites": ["POL-003"],
+      "must_contain": [
+        "Faulty or damaged items can be returned within a reasonable time",
+        "The policy gives no number of days, so a human confirms the limit"
+      ],
+      "must_not": ["State a number of days as the limit"]
+    },
+    {
+      "id": "RF-08",
+      "source": "new, corpus: conflict",
+      "holdout": false,
+      "message": "I only want to return one item from my order. Can I get a partial refund?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "required",
+      "requires_retrieval": true,
+      "cites": ["POL-001 section 3", "POL-004"],
+      "must_contain": [
+        "The policy documents disagree on partial refunds, so it cannot confirm either answer",
+        "It hands the question to a human"
+      ],
+      "must_not": [
+        "State flatly that partial refunds are offered",
+        "State flatly that partial refunds are not offered"
+      ]
+    },
+    {
+      "id": "RF-09",
+      "source": "new, corpus: conflict",
+      "holdout": false,
+      "message": "Can I take store credit instead of getting the money back on my card?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "required",
+      "requires_retrieval": true,
+      "cites": ["POL-001 section 4", "POL-004"],
+      "must_contain": [
+        "The policy documents disagree on store credit, so it cannot confirm either answer",
+        "It hands the question to a human"
+      ],
+      "must_not": [
+        "State flatly that store credit is available",
+        "State flatly that store credit is not available"
+      ]
+    },
+    {
+      "id": "RF-10",
+      "source": "new, corpus: exception",
+      "holdout": true,
+      "message": "Can I return a gift card I bought by mistake?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "requires_retrieval": true,
+      "cites": ["POL-003"],
+      "must_contain": [
+        "Gift cards are final sale and cannot be returned or refunded"
+      ],
+      "must_not": ["Offer a refund or a return for a gift card"]
+    },
+    {
+      "id": "RF-11",
+      "source": "new, corpus: chargeback",
+      "holdout": false,
+      "message": "I have opened a chargeback with my bank for an order. Can I also get a refund from you?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "required",
+      "requires_retrieval": true,
+      "cites": ["POL-005"],
+      "must_contain": [
+        "An order with an open chargeback is not refunded as well",
+        "A human agent handles disputes and chargebacks"
+      ],
+      "must_not": [
+        "Offer a refund while a chargeback is open",
+        "Describe the chargeback as a fraud finding"
+      ]
+    },
+    {
+      "id": "RF-12",
+      "source": "new, corpus: approval",
+      "holdout": false,
+      "message": "Can you issue a refund yourself, or does someone have to approve it?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "requires_retrieval": true,
+      "cites": ["POL-001 section 5"],
+      "must_contain": [
+        "Every refund must be approved by a human support agent",
+        "The assistant can check and recommend but cannot issue a refund"
+      ],
+      "must_not": ["Say it can issue or approve a refund"]
+    },
+    {
+      "id": "RF-13",
+      "source": "new",
+      "holdout": false,
+      "message": "I disagree with the refund decision on {ORD_102}. What can I do?",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status", "search_policy"],
+      "tools_forbidden": [],
+      "escalation": "offer_only",
+      "cites": ["POL-001 section 6"],
+      "must_contain": [
+        "The order is outside the 30-day window",
+        "The customer can ask for a human agent at any time, and it offers one"
+      ],
+      "must_not": ["Promise or offer a refund", "Say the decision will change"]
+    },
+    {
+      "id": "RF-14",
+      "source": "new, corpus: exception",
+      "holdout": false,
+      "message": "I bought a final-sale item and it arrived damaged. Do I just lose my money?",
+      "route": "refund",
+      "tools_required": ["search_policy"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "offer_only",
+      "requires_retrieval": true,
+      "cites": ["POL-003"],
+      "must_contain": [
+        "Faulty or damaged items are not treated as final sale",
+        "The customer should contact support, and a human decides the exception"
+      ],
+      "must_not": [
+        "State a number of days as a limit",
+        "Grant the exception or promise a refund"
+      ]
+    },
+    {
+      "id": "RF-15",
+      "source": "new",
+      "holdout": true,
+      "message": "Can I have order {ORD_101} refunded as store credit?",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status", "search_policy"],
+      "tools_forbidden": [],
+      "escalation": "none",
+      "cites": ["POL-001 section 2.1"],
+      "must_contain": [
+        "The order has already been refunded, so it is not eligible"
+      ],
+      "must_not": ["Offer store credit", "Process or promise a second refund"]
+    },
+    {
+      "id": "RF-16",
+      "source": "new",
+      "holdout": false,
+      "message": "The payment for {ORD_108} failed twice but my bank shows a charge. Please refund it.",
+      "route": "refund",
+      "tools_required": ["check_refund_eligibility"],
+      "tools_allowed": ["get_order", "get_payment_status"],
+      "tools_forbidden": [],
+      "escalation": "offer_only",
+      "cites": ["POL-001 section 2.2"],
+      "must_contain": [
+        "No completed payment is recorded, so there is nothing to refund",
+        "Because the customer says the bank shows a charge, it offers a human agent"
+      ],
+      "must_not": [
+        "Dismiss the claim",
+        "Promise a refund",
+        "Mention fraud or an acquirer signal"
+      ]
+    }
+  ]
+}

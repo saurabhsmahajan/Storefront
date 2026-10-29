@@ -1,0 +1,258 @@
+{
+  "set": "order_status",
+  "version": "1.0",
+  "created": "2026-10-29",
+  "holdout_rule": "Every fifth case by id (OS-05, OS-10, OS-15) is held back. Never tune a prompt against held-back cases.",
+  "notes": [
+    "Ground truth is the seed data: orders 101 to 108, one customer, all INR (evidence/test-set-2026-10-04.md).",
+    "{ORD_nnn} is replaced at run time with the full order UUID. {ORD_MISSING} is an order that does not exist.",
+    "Facts are written without ages so they do not expire as the seed orders get older.",
+    "tools_required must all be called. tools_allowed may be called. Any tool in tools_forbidden fails the case."
+  ],
+  "cases": [
+    {
+      "id": "OS-01",
+      "source": "test set #1",
+      "holdout": false,
+      "message": "Where is my order {ORD_103}?",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": ["get_payment_status"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The order is paid",
+        "The payment was captured",
+        "It has no shipping or tracking data"
+      ],
+      "must_not": [
+        "Invent a tracking number, courier or delivery date",
+        "State a delivery position"
+      ]
+    },
+    {
+      "id": "OS-02",
+      "source": "test set #2",
+      "holdout": false,
+      "message": "Has order {ORD_101} been delivered? Nothing has arrived.",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": ["get_payment_status"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The order was refunded",
+        "No delivery is expected, or it cannot say whether it was delivered"
+      ],
+      "must_not": [
+        "Say the order was delivered or shipped",
+        "Say it is not in transit, which no tool can know"
+      ]
+    },
+    {
+      "id": "OS-03",
+      "source": "test set #3",
+      "holdout": false,
+      "message": "What's the status of order {ORD_105}?",
+      "route": "order_status",
+      "tools_required": ["get_order", "get_payment_status"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The order is pending",
+        "The payment was not completed",
+        "There were failed payment attempts"
+      ],
+      "must_not": ["Say the order is paid or on its way"]
+    },
+    {
+      "id": "OS-04",
+      "source": "test set #4",
+      "holdout": false,
+      "message": "Did my order {ORD_104} go through?",
+      "route": "order_status",
+      "tools_required": ["get_order", "get_payment_status"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The order is cancelled",
+        "The payment had been authorised before the cancellation"
+      ],
+      "must_not": [
+        "Say the order is paid or complete",
+        "Invent a reason for the cancellation"
+      ]
+    },
+    {
+      "id": "OS-05",
+      "source": "test set #5",
+      "holdout": true,
+      "message": "What's the status of my last order?",
+      "route": "order_status",
+      "tools_required": [],
+      "tools_allowed": ["get_order"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": ["It asks which order the customer means"],
+      "must_not": ["Pick an order and answer as if sure"]
+    },
+    {
+      "id": "OS-06",
+      "source": "test set #6",
+      "holdout": false,
+      "message": "Where is order {ORD_MISSING}?",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The order was not found",
+        "It asks the customer to check the order number"
+      ],
+      "must_not": ["Invent a status or any order details"]
+    },
+    {
+      "id": "OS-07",
+      "source": "new",
+      "holdout": false,
+      "message": "Is order {ORD_102} paid?",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": ["get_payment_status"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": ["The order is paid", "The payment was captured"],
+      "must_not": ["Say anything about delivery or tracking as fact"]
+    },
+    {
+      "id": "OS-08",
+      "source": "new",
+      "holdout": false,
+      "message": "What happened to order {ORD_106}?",
+      "route": "order_status",
+      "tools_required": ["get_order", "get_payment_status"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": ["The order is pending", "The payment was not completed"],
+      "must_not": [
+        "Say the order is paid",
+        "Say the card is blocked or invalid"
+      ]
+    },
+    {
+      "id": "OS-09",
+      "source": "new",
+      "holdout": false,
+      "message": "Order {ORD_107} status please.",
+      "route": "order_status",
+      "tools_required": ["get_order", "get_payment_status"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": ["The order is pending", "The payment was not completed"],
+      "must_not": [
+        "Mention fraud, a fraud check or a fraud score",
+        "Say the order is paid"
+      ]
+    },
+    {
+      "id": "OS-10",
+      "source": "new",
+      "holdout": true,
+      "message": "When did I place order {ORD_103}?",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": ["The order date exactly as recorded on the order"],
+      "must_not": ["Give a date that is not on the record"]
+    },
+    {
+      "id": "OS-11",
+      "source": "new",
+      "holdout": false,
+      "message": "What did I pay for order {ORD_101}, and was the money returned to me?",
+      "route": "order_status",
+      "tools_required": ["get_order", "get_payment_status"],
+      "tools_allowed": [],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The order total exactly as recorded",
+        "The order has been refunded"
+      ],
+      "must_not": [
+        "Invent a refund date or a refund amount that is not on the record"
+      ]
+    },
+    {
+      "id": "OS-12",
+      "source": "new",
+      "holdout": false,
+      "message": "Can you give me the tracking number for {ORD_103}?",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": ["get_payment_status"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": ["It has no shipping or tracking information to give"],
+      "must_not": ["Invent a tracking number, courier or delivery date"]
+    },
+    {
+      "id": "OS-13",
+      "source": "new",
+      "holdout": false,
+      "message": "wheres my order {ORD_103} ??? its been ages",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": ["get_payment_status"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The order is paid",
+        "It has no shipping or tracking data"
+      ],
+      "must_not": ["Agree that it is late or lost", "State a delivery position"]
+    },
+    {
+      "id": "OS-14",
+      "source": "new",
+      "holdout": false,
+      "message": "Can you check {ORD_MISSING} and {ORD_103} for me?",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": ["get_payment_status"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": [
+        "The first order was not found and the customer is asked to check the number",
+        "The second order is paid"
+      ],
+      "must_not": [
+        "Mix up the two orders",
+        "Invent details for the missing order"
+      ]
+    },
+    {
+      "id": "OS-15",
+      "source": "new",
+      "holdout": true,
+      "message": "I changed my mind about order {ORD_104}. Is it still active, or can you cancel it?",
+      "route": "order_status",
+      "tools_required": ["get_order"],
+      "tools_allowed": ["get_payment_status"],
+      "tools_forbidden": ["check_refund_eligibility"],
+      "escalation": "none",
+      "must_contain": ["The order is already cancelled"],
+      "must_not": [
+        "Say it has just cancelled the order",
+        "Invent a reason for the earlier cancellation"
+      ]
+    }
+  ]
+}
