@@ -1,8 +1,10 @@
-﻿import { SignJWT, jwtVerify } from "jose";
+﻿import { SignJWT, jwtVerify, decodeJwt } from "jose";
 import { randomUUID } from "node:crypto";
 import { loadRegister } from "./register.mjs";
 import { privateKey, publicKey } from "./keys.mjs";
 import { ISSUER } from "./issuer.mjs";
+import { audit, peek } from "./audit.mjs";
+import { actorChain } from "./verify.mjs";
 
 export const ORDER = "spiffe://storefront.local/agents/order";
 export const PAYMENT = "spiffe://storefront.local/agents/payment";
@@ -23,18 +25,17 @@ export async function makeActorAssertion(actor) {
     .sign(privateKey(keyName(actor)));
 }
 
-// Run by the issuer: swaps a token for a narrower one.
-export async function exchangeToken({
+async function exchangeCore({
   subjectToken,
   actor,
   actorAssertion,
   audience,
   scopes,
   orderId,
-  register = loadRegister(),
+  register,
 }) {
   if (!register.has(actor)) throw new Error(`actor not in register: ${actor}`);
-  const allowed = register.get(actor)?.delegatesTo ?? [];
+  const allowed = register.get(actor).delegatesTo;
   if (!allowed.includes(audience)) {
     throw new Error(`${actor} may not delegate to ${audience}`);
   }
@@ -78,6 +79,7 @@ export async function exchangeToken({
   return new SignJWT({
     scope: scopes.join(" "),
     act,
+    trace: parent.trace,
     ...(order_id ? { order_id } : {}),
   })
     .setProtectedHeader({ alg: "EdDSA" })
@@ -88,4 +90,36 @@ export async function exchangeToken({
     .setIssuedAt()
     .setExpirationTime(exp)
     .sign(privateKey("issuer"));
+}
+
+// Run by the issuer: swaps a token for a narrower one, and logs the decision.
+export async function exchangeToken(args) {
+  const register = args.register ?? loadRegister();
+  const parent = peek(args.subjectToken);
+  const base = {
+    event: "token_exchanged",
+    traceId: parent.trace,
+    customer: parent.sub,
+    actor: args.actor,
+    audience: args.audience,
+    requestedScopes: args.scopes,
+    parentJti: parent.jti,
+  };
+  try {
+    const token = await exchangeCore({ ...args, register });
+    const granted = decodeJwt(token);
+    audit.record({
+      ...base,
+      outcome: "allow",
+      jti: granted.jti,
+      grantedScopes: granted.scope.split(" "),
+      orderId: granted.order_id,
+      actors: actorChain(granted),
+      lifetimeSeconds: granted.exp - granted.iat,
+    });
+    return token;
+  } catch (err) {
+    audit.record({ ...base, outcome: "deny", reason: err.message });
+    throw err;
+  }
 }
