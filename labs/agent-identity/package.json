@@ -1,0 +1,12 @@
+{
+  "name": "agent-identity-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "keys": "node scripts/gen-keys.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "jose": "^6.2.14"
+  }
+}
