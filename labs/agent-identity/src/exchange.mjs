@@ -1,4 +1,5 @@
-﻿import { SignJWT, jwtVerify, decodeJwt } from "jose";
+﻿import { isRevoked } from "./revocation.mjs";
+import { SignJWT, jwtVerify, decodeJwt } from "jose";
 import { randomUUID } from "node:crypto";
 import { loadRegister } from "./register.mjs";
 import { privateKey, publicKey } from "./keys.mjs";
@@ -34,6 +35,8 @@ async function exchangeCore({
   orderId,
   register,
 }) {
+  if (isRevoked(actor)) throw new Error(`agent revoked: ${actor}`);
+  if (isRevoked(audience)) throw new Error(`agent revoked: ${audience}`);
   if (!register.has(actor)) throw new Error(`actor not in register: ${actor}`);
   const allowed = register.get(actor).delegatesTo;
   if (!allowed.includes(audience)) {
