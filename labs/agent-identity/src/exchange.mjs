@@ -34,6 +34,10 @@ export async function exchangeToken({
   register = loadRegister(),
 }) {
   if (!register.has(actor)) throw new Error(`actor not in register: ${actor}`);
+  const allowed = register.get(actor)?.delegatesTo ?? [];
+  if (!allowed.includes(audience)) {
+    throw new Error(`${actor} may not delegate to ${audience}`);
+  }
   const target = register.get(audience);
   if (!target) throw new Error(`audience not in register: ${audience}`);
 

@@ -50,3 +50,13 @@ No agent may carry payment:refund. Refunds stay with a human.
 
 Open issue: a shopper agent could try to exchange straight for the payment agent,
 skipping the order agent. A later step on allowed delegation paths will close this.
+
+## Decision: allowed delegation paths
+
+Date: 2026-10-30
+
+The register now has a "May delegate to" column. Shopper may delegate only to
+order, order only to payment, payment to nobody. The issuer refuses any other
+exchange. This closed the gap where the shopper could skip the order agent.
+Changing the chain now means changing the register, which needs the owner's
+approval.

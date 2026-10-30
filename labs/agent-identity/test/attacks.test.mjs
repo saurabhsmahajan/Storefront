@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   exchangeToken,
   makeActorAssertion,
+  ORDER,
   PAYMENT,
 } from "../src/exchange.mjs";
 import { createPaymentAgent } from "../src/payment.mjs";
@@ -21,7 +22,7 @@ test("refund relay, layer 1: the issuer will not give the shopper a refund token
       subjectToken: login,
       actor: SHOPPER,
       actorAssertion: await makeActorAssertion(SHOPPER),
-      audience: PAYMENT,
+      audience: ORDER,
       scopes: ["payment:refund"],
       orderId: "1042",
     }),
@@ -45,14 +46,30 @@ test("refund relay, layer 3: the payment agent refuses even with a valid charge 
   );
 });
 
-test("KNOWN GAP (closed in a later step): the shopper can skip the order agent", async () => {
-  const token = await exchangeToken({
-    subjectToken: await loginToken(),
-    actor: SHOPPER,
-    actorAssertion: await makeActorAssertion(SHOPPER),
-    audience: PAYMENT,
-    scopes: ["payment:charge"],
-    orderId: "1042",
-  });
-  assert.ok(token);
+test("skipped hop: the shopper cannot get a token addressed to the payment agent", async () => {
+  await assert.rejects(
+    exchangeToken({
+      subjectToken: await loginToken(),
+      actor: SHOPPER,
+      actorAssertion: await makeActorAssertion(SHOPPER),
+      audience: PAYMENT,
+      scopes: ["payment:charge"],
+      orderId: "1042",
+    }),
+    /may not delegate/,
+  );
+});
+
+test("backwards hop: the order agent cannot hand authority back to the shopper", async () => {
+  const orderTok = await orderToken(await loginToken());
+  await assert.rejects(
+    exchangeToken({
+      subjectToken: orderTok,
+      actor: ORDER,
+      actorAssertion: await makeActorAssertion(ORDER),
+      audience: SHOPPER,
+      scopes: ["order:read"],
+    }),
+    /may not delegate/,
+  );
 });
