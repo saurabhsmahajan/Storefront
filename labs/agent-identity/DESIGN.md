@@ -15,11 +15,11 @@ must narrow at every hop, and that the payment agent can never refund.
 
 ## Planned tokens
 
-| Token             | Audience      | Allowed                                                   | Not allowed    |
-| ----------------- | ------------- | --------------------------------------------------------- | -------------- |
-| Sam's login token | shopper agent | catalog:read, order:create, order:read, refund:request    | payment:*      |
-| Shopper to order  | order agent   | order:create, order:read, refund:request, order 1042 only | other orders   |
-| Order to payment  | payment agent | payment:charge, order 1042, once                          | payment:refund |
+| Token             | Audience      | Allowed                                                                   | Not allowed    |
+| ----------------- | ------------- | ------------------------------------------------------------------------- | -------------- |
+| Sam's login token | shopper agent | catalog:read, order:create, order:read, refund:request, payment:charge    | payment:refund |
+| Shopper to order  | order agent   | order:create, order:read, refund:request, payment:charge, order 1042 only | other orders   |
+| Order to payment  | payment agent | payment:charge, order 1042, once                                          | payment:refund |
 
 ## Tests we expect to pass later
 
@@ -39,3 +39,14 @@ Trade-off: this simulates workload identity. In production, SPIRE or a cloud
 identity service issues and rotates these identities and attests the workload.
 Risk accepted: private keys sit on disk in the lab. Fine for synthetic data,
 not for production. Revisit if the lab is extended to run real SPIRE.
+
+## Decision: scopes only shrink
+
+Date: 2026-10-30
+
+Because a token can never carry more than its parent, payment:charge must start
+in Sam's login token (he pays for his own order). Shopper and order may relay it.
+No agent may carry payment:refund. Refunds stay with a human.
+
+Open issue: a shopper agent could try to exchange straight for the payment agent,
+skipping the order agent. A later step on allowed delegation paths will close this.
